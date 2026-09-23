@@ -37,6 +37,8 @@ class Bout:
     fighter_2_id: str | None = None
     fighter_1_match: str | None = None  # how the id was found (manual/exact/fuzzy/...)
     fighter_2_match: str | None = None
+    is_title_fight: int | None = None   # None -> predict.py default (0)
+    scheduled_rounds: int | None = None  # None -> predict.py default (5 for bout 1, else 3)
 
 
 @dataclass
@@ -74,7 +76,8 @@ def load_manual_card(path: Path, today: date) -> Card | None:
                  bout_order=b.get("bout_order", i + 1),
                  fighter_1_id=b.get("fighter_1_id") or None, fighter_2_id=b.get("fighter_2_id") or None,
                  fighter_1_match="manual" if b.get("fighter_1_id") else None,
-                 fighter_2_match="manual" if b.get("fighter_2_id") else None)
+                 fighter_2_match="manual" if b.get("fighter_2_id") else None,
+                 is_title_fight=b.get("is_title_fight"), scheduled_rounds=b.get("scheduled_rounds"))
             for i, b in enumerate(data["bouts"])
         ]
     except (KeyError, TypeError, ValueError) as e:
@@ -165,8 +168,10 @@ def match_card(card: Card, matcher: FighterMatcher) -> Card:
             m = matcher.match(name, weight_class=b.weight_class, on_date=on_date, fuzzy=True)
             setattr(b, f"fighter_{side}_id", m.fighter_id)
             detail = m.method
-            if not m.ok and m.candidates:
+            if m.method == "ambiguous":
                 detail += f" (candidates: {', '.join(m.candidates)})"
+            elif not m.ok and m.candidates:
+                detail += f" (closest: {m.candidates[0]}, score {m.score:.2f})"
             setattr(b, f"fighter_{side}_match", detail)
             if m.method == "fuzzy":
                 logger.info("Fuzzy match %r -> %s (score %.2f)", name, m.fighter_id, m.score)
@@ -176,10 +181,10 @@ def match_card(card: Card, matcher: FighterMatcher) -> Card:
 
 
 def get_upcoming_card(fighters: pd.DataFrame | None = None, client: HttpClient | None = None,
-                      today: date | None = None) -> Card:
+                      today: date | None = None, card_path: Path | None = None) -> Card:
     cfg = load_config()
     today = today or datetime.now(timezone.utc).date()
-    card = load_manual_card(resolve_path(cfg["upcoming"]["manual_card_file"]), today)
+    card = load_manual_card(card_path or resolve_path(cfg["upcoming"]["manual_card_file"]), today)
     if card is None:
         try:
             card = fetch_espn_card(client or get_client(), cfg, today)

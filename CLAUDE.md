@@ -187,7 +187,8 @@ Implementation notes (src/features.py):
 - Get the next card from `src/upcoming.py` (manual `data/raw/upcoming_card.json` first, else ESPN).
 - Map fighter names to `fighter_id` with `src/matching.py`. Fighters not in `fighters.csv` are treated as debuts (`is_debut = 1`, physical stats NaN) and listed in the console output; unmatched names must be visible, never guessed.
 - Build features as of the event date using the same code path as training (reuse functions from `features.py`; no duplicated logic).
-- Output `outputs/predictions/<event_date>_<event_slug>.csv`: `event_date, weight_class, fighter_1, fighter_2, p_fighter_1, p_fighter_2, predicted_winner, confidence, model_version, predicted_at`.
+- Output `outputs/predictions/<event_date>_<event_slug>.csv`: `event_date, weight_class, fighter_1, fighter_2, p_fighter_1, p_fighter_2, predicted_winner, confidence, model_version, predicted_at`, followed by `event_name, bout_order, fighter_1_id, fighter_2_id, fighter_1_match, fighter_2_match, fighter_1_debut, fighter_2_debut` (IDs so tracking joins on fighter_id; match method so fuzzy/unmatched names stay visible).
+- Card defaults when not given: `is_title_fight = 0`, `scheduled_rounds = 5` for bout 1 and 3 otherwise. `upcoming_card.json` may set both per bout.
 - Also print a readable table to the console.
 
 ## Stage 6: track.py
