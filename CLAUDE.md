@@ -59,6 +59,7 @@ ufc-predictor/
 │   ├── features.py
 │   ├── train.py
 │   ├── predict.py
+│   ├── report.py           # self-contained HTML card report (used by predict.py)
 │   └── track.py
 ├── tests/
 └── notebooks/              # exploration only; pipeline must not depend on these
@@ -188,6 +189,8 @@ Implementation notes (src/features.py):
 - Map fighter names to `fighter_id` with `src/matching.py`. Fighters not in `fighters.csv` are treated as debuts (`is_debut = 1`, physical stats NaN) and listed in the console output; unmatched names must be visible, never guessed.
 - Build features as of the event date using the same code path as training (reuse functions from `features.py`; no duplicated logic).
 - Output `outputs/predictions/<event_date>_<event_slug>.csv`: `event_date, weight_class, fighter_1, fighter_2, p_fighter_1, p_fighter_2, predicted_winner, confidence, model_version, predicted_at`, followed by `event_name, bout_order, fighter_1_id, fighter_2_id, fighter_1_match, fighter_2_match, fighter_1_debut, fighter_2_debut` (IDs so tracking joins on fighter_id; match method so fuzzy/unmatched names stay visible).
+- `key_factors` (last CSV column): top 3 drivers per fighter. Drivers come from the model's own log-odds contributions (`model.contributions()`: LightGBM `pred_contrib=True`, logistic coef × standardised value), combined over both orientations as ½·(c(A,B) − c(B,A)) to mirror the symmetric prediction (the bias cancels; the sum's sign equals the sign of p_fighter_1 − 0.5). f1_/f2_/diff_ columns of a feature are summed into one driver; |contribution| < 0.02 is ignored. Values shown are raw pre-imputation features (n/a if missing). They explain the model, not the fight: tree models are not monotonic, so a driver can favour the "worse-looking" number.
+- Also writes `<event_date>_<event_slug>.html` (src/report.py): one self-contained file, embedded CSS, no scripts or external resources, all text HTML-escaped.
 - Card defaults when not given: `is_title_fight = 0`, `scheduled_rounds = 5` for bout 1 and 3 otherwise. `upcoming_card.json` may set both per bout.
 - Also print a readable table to the console.
 

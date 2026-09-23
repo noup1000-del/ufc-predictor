@@ -186,6 +186,16 @@ class LogisticModel:
     def params(self) -> dict:
         return {"C": self.C}
 
+    def contributions(self, rows: pd.DataFrame) -> pd.DataFrame:
+        """Per-feature log-odds contributions (coef x standardised value) plus `_bias`.
+        Row sums equal the model's log-odds."""
+        X = self.physical_.transform(rows)[self.columns].to_numpy(dtype=float)
+        z = self.pipe_[:-1].transform(X)
+        lr = self.pipe_.named_steps["lr"]
+        out = pd.DataFrame(z * lr.coef_[0], columns=self.columns, index=rows.index)
+        out["_bias"] = lr.intercept_[0]
+        return out
+
     def coefficients(self) -> pd.Series:
         return pd.Series(self.pipe_.named_steps["lr"].coef_[0], index=self.columns)
 
@@ -226,6 +236,13 @@ class LGBMModel:
 
     def params(self) -> dict:
         return {**self.params_in, "n_estimators": self.best_iteration_}
+
+    def contributions(self, rows: pd.DataFrame) -> pd.DataFrame:
+        """LightGBM SHAP-style contributions (log-odds) per feature plus `_bias`.
+        Row sums equal the model's raw score (log-odds)."""
+        X = self._frame(rows)
+        c = self.model_.booster_.predict(X, pred_contrib=True, num_iteration=self.best_iteration_)
+        return pd.DataFrame(c, columns=list(X.columns) + ["_bias"], index=rows.index)
 
     def importances(self) -> pd.Series:
         gain = self.model_.booster_.feature_importance(importance_type="gain")
