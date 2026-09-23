@@ -195,6 +195,9 @@ Implementation notes (src/features.py):
 
 - After an event completes, match its results to the saved predictions and append to `outputs/tracking/results_log.csv`: prediction, actual winner, correct (bool), probability.
 - Print running accuracy and Brier score overall and for the last 5 events.
+- Log columns: `event_date, fighter_1, fighter_2, predicted_winner, actual_winner, correct, p_predicted_winner, model_version, tracked_at, fight_id, event_name, prediction_file`.
+- Matching is by fighter IDs: the same unordered pair (card order may differ from the source), `event_date` within ±1 day (ESPN dates are UTC). If one side had no ID (debut), the known fighter's fight on that date is used. Never by names.
+- Idempotent: one row per `fight_id`, existing rows are never rewritten. If several prediction files cover a fight, the latest pre-fight prediction is used; predictions made more than a day after the event are ignored. Draws/NCs are logged with empty `correct` and excluded from metrics.
 
 ## run_pipeline.py
 
@@ -206,6 +209,8 @@ python run_pipeline.py --stage features   # run a single stage
 ```
 
 Log start/end and row counts for each stage. Exit with a non-zero code on failure so a scheduler can detect it.
+
+Also: `--dry-run` (print the plan), `--card PATH` (card JSON for predict), `--force-train`. The train stage in `--update` runs only if there is no model, the processed data is newer than the model's `data_cutoff`, or the feature list changed; `--full` and `--stage train` always train. The pipeline stops at the first failing stage (exit 1). Logs also go to `logs/pipeline.log` (git-ignored).
 
 ## Tests (tests/)
 
