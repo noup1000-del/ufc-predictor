@@ -1,0 +1,50 @@
+{
+  "_comment": "SYNTHETIC fixture. ESPN returned 403 from the development machine, so this mirrors the documented scoreboard shape (events[].competitions[].competitors[].athlete) and is NOT a saved real response. Replace with a real saved response when one is available.",
+  "leagues": [{"abbreviation": "UFC"}],
+  "events": [
+    {
+      "id": "900000001",
+      "name": "Dana White's Contender Series: Season 10, Week 8",
+      "date": "2026-09-29T23:00Z",
+      "status": {"type": {"completed": false, "state": "pre"}},
+      "competitions": [
+        {"id": "1", "type": {"abbreviation": "Lightweight"},
+         "competitors": [{"order": 1, "athlete": {"displayName": "Some Prospect"}},
+                         {"order": 2, "athlete": {"displayName": "Other Prospect"}}]}
+      ]
+    },
+    {
+      "id": "900000002",
+      "name": "UFC 331: Van vs. Pantoja 2",
+      "date": "2026-09-19T22:00Z",
+      "status": {"type": {"completed": true, "state": "post"}},
+      "competitions": []
+    },
+    {
+      "id": "900000004",
+      "name": "UFC 333: Later Card",
+      "date": "2026-10-10T22:00Z",
+      "status": {"type": {"completed": false, "state": "pre"}},
+      "competitions": [
+        {"id": "40", "type": {"abbreviation": "Heavyweight"},
+         "competitors": [{"order": 1, "athlete": {"displayName": "A"}}, {"order": 2, "athlete": {"displayName": "B"}}]}
+      ]
+    },
+    {
+      "id": "900000003",
+      "name": "UFC Fight Night: Tsarukyan vs. Van",
+      "date": "2026-10-03T22:00Z",
+      "status": {"type": {"completed": false, "state": "pre"}},
+      "competitions": [
+        {"id": "30", "type": {"abbreviation": "Women's Flyweight"},
+         "competitors": [{"order": 2, "athlete": {"displayName": "Eduarda Moura"}},
+                         {"order": 1, "athlete": {"displayName": "Casey O'Neill"}}]},
+        {"id": "31", "type": {"abbreviation": "Lightweight"},
+         "competitors": [{"order": 1, "athlete": {"displayName": "Arman Tsarukyan"}},
+                         {"order": 2, "athlete": {"fullName": "Joshua Vann"}}]},
+        {"id": "32", "type": {"text": "Featherweight"},
+         "competitors": [{"order": 1, "athlete": {"displayName": "Only One Fighter"}}]}
+      ]
+    }
+  ]
+}

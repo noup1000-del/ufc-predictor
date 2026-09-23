@@ -1,0 +1,11 @@
+{
+  "event_name": "UFC Fight Night: Example vs. Example",
+  "event_date": "2099-01-01",
+  "bouts": [
+    {"weight_class": "Flyweight", "fighter_1": "Joshua Van", "fighter_2": "Alexandre Pantoja"},
+    {"weight_class": "Middleweight", "fighter_1": "Bruno Silva", "fighter_2": "Wellington Turman"},
+    {"weight_class": "Lightweight", "fighter_1": "Mike Davis", "fighter_2": "Gilbert Burns",
+     "fighter_1_id": "fb3e61720be4690c"},
+    {"weight_class": "Bantamweight", "fighter_1": "Totally New Debutant", "fighter_2": "Mark Vologdin"}
+  ]
+}
