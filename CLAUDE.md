@@ -136,6 +136,10 @@ Rules:
 - Drop fights before 2005-01-01 (sparse stats) — make the cutoff configurable.
 - Keep draws/NC in the history (they count as fights for experience) but exclude them as training targets.
 - Validate: no duplicate IDs, dates parse, every fight has exactly two stat rows (log exceptions).
+- Added columns on `fights`: `is_target` (True only for `result == win`), `method_group` (`ko_tko`, `submission`, `decision`, `dq`, `other`), `has_stats` (False if the fight has no valid stat pair; its stat rows are removed).
+- Fights before `min_date` go to `data/processed/fights_prior.csv` (same columns, `is_target = False`, `has_stats = False`, no stat rows). Features use them **only** for record/experience features (fights, wins, losses, streaks, KO/sub losses, layoff, weight-class history), never as targets and never in striking/grappling rates.
+- Dtypes are declared once in `clean.SCHEMA`; every later stage reads processed tables via `clean.load_processed()`.
+- Error-level validation failures exit non-zero; the full report is written to `data/processed/clean_report.json`.
 
 ## Stage 3: features.py — the most important rules
 
