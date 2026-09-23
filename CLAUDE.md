@@ -162,6 +162,13 @@ Matchup features: difference (fighter_1 − fighter_2) for numeric features, and
 
 Output: `data/features/fight_features.csv`, one row per fight orientation, with `fight_id, event_date, fighter_1_id, fighter_2_id, target` plus features.
 
+Implementation notes (src/features.py):
+- History is collapsed to one cumulative state per (fighter, event_date); a fight on date D reads the latest state with `hist_date < D` via `merge_asof(allow_exact_matches=False)`. A runtime assertion rejects any state dated on/after D. `matchup_features()` is the single code path for training and prediction.
+- Streak: +n consecutive wins / −n consecutive losses; a draw resets to 0; an NC leaves it unchanged. Within one date (old tournaments) bouts are ordered by `bout_order` descending.
+- Rates (per 15 min, accuracy, defense) use only post-cutoff fights with stats; each fight contributes to a rate only if its numerator and denominator exist. Defense = opponent misses / opponent attempts; NaN when the opponent never attempted (undefined, not 0). Last-3 windows run over fights with stats.
+- Only `is_target` fights become rows. `orientation` 0 = source order, 1 = swapped. `split` is assigned from `event_date` (config `split`), so both orientations always share a split. `data/features/feature_list.json` lists numeric/categorical columns.
+- `features.symmetric_probability(p_ab, p_ba)` implements the averaging rule; train and predict must use it.
+
 ## Stage 4: train.py
 
 - **Time-based split only, never random.** Example (configurable): train on fights before 2024-01-01, validate on 2024, test on 2025 onward. For the production model, retrain on all data up to the latest event after evaluation.
