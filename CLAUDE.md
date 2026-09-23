@@ -169,6 +169,8 @@ Implementation notes (src/features.py):
 - Rates (per 15 min, accuracy, defense) use only post-cutoff fights with stats; each fight contributes to a rate only if its numerator and denominator exist. Defense = opponent misses / opponent attempts; NaN when the opponent never attempted (undefined, not 0). Last-3 windows run over fights with stats.
 - Only `is_target` fights become rows. `orientation` 0 = source order, 1 = swapped. `split` is assigned from `event_date` (config `split`), so both orientations always share a split. `data/features/feature_list.json` lists numeric/categorical columns.
 - `features.symmetric_probability(p_ab, p_ba)` implements the averaging rule; train and predict must use it.
+- **Feature registry:** every model column maps (via `FEATURE_REGISTRY`, prefix-stripped) to `historical` (from earlier fights), `static` (bio: stance), `contextual` (bout properties: weight class, title, rounds, stance matchup) or `imputed` (height/reach/age, filled by `train.PhysicalImputer`). An unregistered column fails the features stage. `feature_list.json` stores each column's category.
+- **Provenance invariant:** each side carries `_source_max_date` = the latest event any historical feature was computed from (cumulative state and weight-class history). `check_provenance()` raises `ValueError` unless it is strictly before the fight date; it runs inside every `matchup_features` call (training and prediction). `audit=True` (in `matchup_features` / `build_training_features`) adds `_f{1,2}_source_fight_ids` for audit queries. `feature_list.json` records `provenance_checked` and the `features_sha256` of the file that was checked.
 
 ## Stage 4: train.py
 
@@ -181,6 +183,10 @@ Implementation notes (src/features.py):
 - Save the model to `models/model_<YYYY-MM-DD>.pkl` and a JSON with training date, data cutoff, feature list and metrics. Keep `models/latest.pkl` pointing to the current one.
 - Print feature importances. If any single feature is suspiciously dominant, flag it as possible leakage.
 - **Bio missingness leaks the future:** ufcstats fills in reach/height/DOB over time for fighters who stay, so historically a missing value marks short careers (train: fighters with missing reach won 9%; recent debutants with missing reach win ~50%). `train.PhysicalImputer` (fitted on the training rows, stored in the model) fills height/reach/age before both models; the feature file keeps NaN. `train.missingness_report` logs target rate by missingness every run; investigate any new feature whose missingness is far from 50%.
+- **Metric taxonomy** (`train.evaluate`): overall probabilistic (Brier, log loss, Brier uncertainty), discrimination (ROC-AUC over both orientations, Brier resolution), calibration (ECE, MCE, Brier reliability, bin table with 95% Wilson intervals). Calibration and the Brier decomposition use favourite-folded probabilities with `model.calibration_bins`, so they don't depend on the arbitrary fighter order (the source lists the winner first 62% of the time).
+- **Fold isolation:** every model and its `PhysicalImputer` record `fitted_until_`; `train.score()` (the only evaluation path, also used for tuning) raises `FoldLeakError` unless the evaluated rows are strictly later.
+- **Walk-forward backtest** (`python run_pipeline.py --backtest`, slices in `config.backtest`): per slice, tune on the last year before the cutoff, refit on everything before it (imputer included), score the test window; table `Cutoff | Test Period | Model | N | AUC | Brier | LogLoss | ECE` plus calibration per slice; saved to `models/backtest_report.json`.
+- **Promotion gate:** `run_train` always saves `model_<date>.pkl/.json`, but copies it to `latest.pkl` only if (1) the feature file is provenance-checked and unchanged since (sha256), (2) a walk-forward backtest ran on those same features (saved as `backtest_report.json` + `backtest_<date>.json`, summarised in the model JSON), and (3) the full pytest suite passes (subprocess; `model.promotion.run_tests`). Otherwise it raises `PromotionError` and `latest.pkl` is unchanged. Gate results are in the model JSON under `promotion`.
 - Metrics are per fight on symmetric probabilities; ties at p = 0.5 use a deterministic coin flip. The production model is the logistic/LightGBM model with the lower validation log loss, refit on all data. `models/latest.pkl` / `latest.json` are copies (no symlinks on Windows).
 
 ## Stage 5: predict.py
@@ -213,7 +219,7 @@ python run_pipeline.py --stage features   # run a single stage
 
 Log start/end and row counts for each stage. Exit with a non-zero code on failure so a scheduler can detect it.
 
-Also: `--dry-run` (print the plan), `--card PATH` (card JSON for predict), `--force-train`, `--no-predict` (stop after train; for the post-event job).
+Also: `--backtest` (walk-forward backtest only), `--dry-run` (print the plan), `--card PATH` (card JSON for predict), `--force-train`, `--no-predict` (stop after train; for the post-event job).
 
 Scheduling (weekly Monday results/tracking job + Wednesday prediction job, Windows Task Scheduler via `scripts/run_pipeline.bat`, cron, GitHub Actions): see `docs/scheduling.md`. The train stage in `--update` runs only if there is no model, the processed data is newer than the model's `data_cutoff`, or the feature list changed; `--full` and `--stage train` always train. The pipeline stops at the first failing stage (exit 1). Logs also go to `logs/pipeline.log` (git-ignored).
 

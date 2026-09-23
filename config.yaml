@@ -58,4 +58,17 @@ model:
       reg_lambda: 1.0
   # Flag possible leakage if one feature has more than this share of total LightGBM gain.
   dominance_threshold: 0.25
-  calibration_bins: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 1.0]
+  calibration_bins: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 1.0]   # favourite's probability
+  promotion:                  # gates before a model may become models/latest.pkl
+    run_tests: true           # full pytest suite must pass
+    tests_timeout_sec: 900
+
+# Walk-forward (rolling-origin) backtest. Each slice tunes on the last
+# `inner_validation_years` before its cutoff, refits on everything before the cutoff
+# (imputer included), and scores the test window.
+backtest:
+  inner_validation_years: 1
+  slices:
+    - {train_end: "2023-01-01", test_end: "2024-01-01"}
+    - {train_end: "2024-01-01", test_end: "2025-01-01"}
+    - {train_end: "2025-01-01", test_end: null}      # 2025 to latest

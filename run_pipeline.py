@@ -3,7 +3,8 @@
     python run_pipeline.py [--update]        ingest new -> clean -> features -> track -> train (if needed) -> predict
     python run_pipeline.py --full            rebuild from the cached source (no downloads), always retrain
     python run_pipeline.py --predict-only
-    python run_pipeline.py --stage features  one stage (ingest|clean|features|track|train|predict)
+    python run_pipeline.py --stage features  one stage (ingest|clean|features|track|train|predict|backtest)
+    python run_pipeline.py --backtest        walk-forward backtest -> models/backtest_report.json
     python run_pipeline.py --dry-run         show the plan without running anything
 
 Options: --card PATH (card JSON for predict), --force-train, --no-predict (stop after train).
@@ -109,8 +110,19 @@ def stage_train(ctx: Context) -> dict:
     meta = train.run_train()
     test = meta["evaluation"]["metrics"][meta["model_type"]]["test"]
     return {"model_version": meta["model_version"], "model_type": meta["model_type"],
-            "fights_trained": meta["n_fights_trained"], "test_log_loss": round(test["log_loss"], 4),
-            "test_accuracy": round(test["accuracy"], 4)}
+            "fights_trained": meta["n_fights_trained"],
+            "test_log_loss": round(test["probabilistic"]["log_loss"], 4),
+            "test_auc": round(test["discrimination"]["roc_auc"], 4),
+            "test_ece": round(test["calibration"]["ece"], 4),
+            "promoted": meta["promotion"]["promoted"]}
+
+
+def stage_backtest(ctx: Context) -> dict:
+    from src import train
+    report = train.run_backtest_cli(save=True)
+    return {"slices": len(report["slices"]),
+            "lightgbm_log_loss": [round(s["metrics"]["lightgbm"]["probabilistic"]["log_loss"], 4)
+                                  for s in report["slices"]]}
 
 
 def stage_predict(ctx: Context) -> dict:
@@ -121,7 +133,8 @@ def stage_predict(ctx: Context) -> dict:
 
 
 STAGE_FUNCS = {"ingest": stage_ingest, "clean": stage_clean, "features": stage_features,
-               "track": stage_track, "train": stage_train, "predict": stage_predict}
+               "track": stage_track, "train": stage_train, "predict": stage_predict,
+               "backtest": stage_backtest}  # backtest also runs inside train (promotion gate)
 
 
 # --------------------------------------------------------------------------- orchestration
@@ -130,6 +143,8 @@ def plan(args: argparse.Namespace) -> tuple[list[str], Context]:
     ctx = Context(full=args.full, force_train=args.force_train or args.full, card=args.card)
     if args.predict_only:
         return ["predict"], ctx
+    if args.backtest:
+        return ["backtest"], ctx
     if args.stage:
         if args.stage == "train":
             ctx.force_train = True  # asking for the train stage means train
@@ -163,7 +178,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     mode.add_argument("--update", action="store_true", help="default mode")
     mode.add_argument("--full", action="store_true")
     mode.add_argument("--predict-only", action="store_true")
-    mode.add_argument("--stage", choices=STAGES)
+    mode.add_argument("--backtest", action="store_true", help="walk-forward backtest only")
+    mode.add_argument("--stage", choices=STAGES + ["backtest"])
     p.add_argument("--card", type=Path, help="card JSON for the predict stage")
     p.add_argument("--force-train", action="store_true")
     p.add_argument("--no-predict", action="store_true",

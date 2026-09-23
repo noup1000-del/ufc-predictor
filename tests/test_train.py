@@ -5,8 +5,10 @@ import pandas as pd
 import pytest
 
 from src.features import FIGHTER_FEATURES
-from src.train import (BaselineModel, LGBMModel, LogisticModel, PhysicalImputer, calibration_table, evaluate,
-                       fight_level, missingness_report)
+from src.train import (BaselineModel, FoldLeakError, LGBMModel, LogisticModel, PhysicalImputer,
+                       backtest_summary, brier_decomposition, calibration_errors, calibration_table, evaluate,
+                       fight_level, flat_metrics, missingness_report, promotion_gates, run_backtest, score,
+                       wilson_interval)
 
 
 def make_rows(n_fights=400, seed=0):
@@ -53,7 +55,7 @@ def test_evaluate_and_coin_flip_is_deterministic():
     fl = pd.DataFrame({"fight_id": ["a", "b", "c", "d"], "target": [1, 0, 1, 0], "p": [0.9, 0.2, 0.5, 0.5]})
     m1, m2 = evaluate(fl), evaluate(fl)
     assert m1 == m2 and m1["n_fights"] == 4
-    assert m1["brier"] == pytest.approx(np.mean([0.01, 0.04, 0.25, 0.25]))
+    assert m1["probabilistic"]["brier"] == pytest.approx(np.mean([0.01, 0.04, 0.25, 0.25]))
 
 
 def test_calibration_table_is_folded_to_the_favourite():
@@ -111,6 +113,128 @@ def test_models_learn_are_symmetric_and_pickle(tmp_path):
         path = tmp_path / f"{m.name}.pkl"
         path.write_bytes(pickle.dumps(m))
         assert np.allclose(pickle.loads(path.read_bytes()).predict_proba(test), m.predict_proba(test))
+
+
+# --------------------------------------------------------------------------- metric taxonomy
+
+def test_wilson_interval_known_values():
+    lo, hi = wilson_interval([5, 0, 10, 0], [10, 10, 10, 0])
+    assert lo[0] == pytest.approx(0.2366, abs=1e-4) and hi[0] == pytest.approx(0.7634, abs=1e-4)
+    assert lo[1] == pytest.approx(0.0, abs=1e-12) and hi[1] == pytest.approx(0.2775, abs=1e-4)
+    assert lo[2] == pytest.approx(0.7225, abs=1e-4) and hi[2] == pytest.approx(1.0)
+    assert np.isnan(lo[3]) and np.isnan(hi[3])
+
+
+def test_calibration_table_has_wilson_ci_containing_rate():
+    rows = make_rows(400)
+    fl = fight_level(rows, BaselineModel().fit(rows).predict_proba(rows))
+    t = calibration_table(fl)
+    filled = t[t.n > 0]
+    assert {"lower_ci", "upper_ci"} <= set(t.columns)
+    assert ((filled.lower_ci <= filled.actual_win_rate) & (filled.actual_win_rate <= filled.upper_ci)).all()
+
+
+def test_ece_and_mce():
+    t = pd.DataFrame({"n": [10, 30, 0], "mean_predicted": [0.55, 0.7, np.nan], "actual_win_rate": [0.45, 0.75, np.nan]})
+    ece, mce = calibration_errors(t)
+    assert ece == pytest.approx((10 * 0.10 + 30 * 0.05) / 40) and mce == pytest.approx(0.10)
+
+
+def test_brier_decomposition_is_exact_for_binned_constant_forecasts():
+    # Forecasts constant within each bin -> Brier = reliability - resolution + uncertainty exactly.
+    p = np.array([0.52] * 6 + [0.62] * 8 + [0.9] * 6 + [0.3] * 5)   # 0.3 folds to 0.7
+    y = np.array([1, 0, 1, 0, 1, 1] + [1, 1, 0, 1, 1, 0, 1, 0] + [1, 1, 1, 1, 1, 0] + [0, 0, 1, 0, 0])
+    fl = pd.DataFrame({"fight_id": [f"f{i}" for i in range(len(p))], "target": y, "p": p})
+    m, d = evaluate(fl), brier_decomposition(fl)
+    assert m["probabilistic"]["brier"] == pytest.approx(d["reliability"] - d["resolution"] + d["uncertainty"])
+    assert m["calibration"]["brier_reliability"] == pytest.approx(d["reliability"])
+    assert m["discrimination"]["brier_resolution"] == pytest.approx(d["resolution"])
+
+
+def test_metrics_do_not_depend_on_fighter_order():
+    rng = np.random.default_rng(3)
+    p = rng.uniform(0.2, 0.8, 300)
+    y = (rng.uniform(size=300) < p).astype(int)
+    fl = pd.DataFrame({"fight_id": [f"f{i}" for i in range(300)], "target": y, "p": p})
+    flip = rng.uniform(size=300) < 0.5
+    fl2 = fl.assign(target=np.where(flip, 1 - y, y), p=np.where(flip, 1 - p, p))
+    a, b = flat_metrics(evaluate(fl)), flat_metrics(evaluate(fl2))
+    for k in ("brier", "log_loss", "roc_auc", "ece", "mce", "brier_reliability", "brier_resolution", "accuracy"):
+        assert a[k] == pytest.approx(b[k]), k
+    assert set(evaluate(fl)) == {"n_fights", "accuracy", "probabilistic", "discrimination", "calibration"}
+
+
+# --------------------------------------------------------------------------- fold isolation
+
+def test_scoring_refuses_rows_the_model_or_imputer_could_have_seen():
+    rows = make_rows(400)
+    cut = rows.event_date.sort_values().iloc[len(rows) // 2]
+    train, later = rows[rows.event_date < cut], rows[rows.event_date >= cut]
+    m = LogisticModel([c for c in NUMERIC if c.startswith("diff_")], 1.0, 0).fit(train)
+    assert m.physical_.fitted_until_ == train.event_date.max() and m.physical_.n_fit_rows_ == len(train)
+    score(m, later)                                     # strictly later: fine
+    with pytest.raises(FoldLeakError):
+        score(m, rows)                                  # overlaps the training window
+    base = BaselineModel().fit(train)
+    with pytest.raises(FoldLeakError):
+        score(base, train)
+
+
+def test_imputer_ignores_evaluation_rows():
+    rows = make_rows(400)
+    cut = rows.event_date.sort_values().iloc[len(rows) // 2]
+    train, later = rows[rows.event_date < cut].copy(), rows[rows.event_date >= cut].copy()
+    m = LogisticModel([c for c in NUMERIC if c.startswith("diff_")], 1.0, 0).fit(train)
+    before = (m.physical_.reach_slope_, dict(m.physical_.median_))
+    later["f1_reach_in"] = 999.0                        # absurd eval values must not move the fit
+    score(m, later)
+    assert (m.physical_.reach_slope_, dict(m.physical_.median_)) == before
+
+
+# --------------------------------------------------------------------------- walk-forward backtest
+
+SMALL_MCFG = {"random_seed": 0, "logistic": {"C_grid": [0.1, 1.0]},
+              "lightgbm": {"learning_rate": 0.1, "max_estimators": 50, "early_stopping_rounds": 10,
+                           "grid": {"num_leaves": [7], "min_child_samples": [20]}, "fixed": {}},
+              "calibration_bins": [0.5, 0.6, 0.7, 1.0]}
+
+
+def test_backtest_runs_rolling_origin_slices():
+    rows = make_rows(1500)   # daily dates 2010-01-01 .. 2014-02
+    fl = {"numeric": NUMERIC, "categorical": CATEGORICAL, "features_sha256": "abc", "data_cutoff": "2014-02-08"}
+    bcfg = {"inner_validation_years": 1, "slices": [{"train_end": "2012-01-01", "test_end": "2013-01-01"},
+                                                     {"train_end": "2013-01-01", "test_end": None}]}
+    rep = run_backtest(rows, fl, SMALL_MCFG, bcfg, log=False)
+    assert rep["features_sha256"] == "abc" and len(rep["slices"]) == 2
+    s1, s2 = rep["slices"]
+    assert s1["cutoff"] == "2012-01-01" and s1["test_period"] == "2012-01-01..2012-12-31"
+    assert s2["test_period"].endswith(str(rows.event_date.max().date()))
+    for s in rep["slices"]:
+        assert all(pd.Timestamp(d) < pd.Timestamp(s["cutoff"]) for d in s["imputer_fitted_until"].values())
+        assert s["metrics"]["lightgbm"]["discrimination"]["roc_auc"] > 0.7
+        assert set(s["calibration"]) == {"baseline", "logistic", "lightgbm"}
+    summary = backtest_summary(rep)
+    assert list(summary.columns[:8]) == ["Cutoff", "Test Period", "Model", "N", "AUC", "Brier", "LogLoss", "ECE"]
+    assert len(summary) == 6
+
+
+# --------------------------------------------------------------------------- promotion gate
+
+def test_promotion_gates(tmp_path):
+    from src.features import file_sha256
+    (tmp_path / "fight_features.csv").write_text("a,b\n1,2\n")
+    sha = file_sha256(tmp_path / "fight_features.csv")
+    fl = {"provenance_checked": True, "features_sha256": sha}
+    bt = {"features_sha256": sha, "slices": [{}]}
+    ok = {"passed": True, "summary": "101 passed"}
+    assert promotion_gates(fl, tmp_path, bt, ok) == []
+    assert promotion_gates({**fl, "provenance_checked": False}, tmp_path, bt, ok)[0].startswith("provenance")
+    assert promotion_gates(fl, tmp_path, {"features_sha256": "other", "slices": [{}]}, ok)[0].startswith("backtest")
+    assert promotion_gates(fl, tmp_path, None, ok) == ["backtest: not run"]
+    assert promotion_gates(fl, tmp_path, bt, {"passed": False, "summary": "1 failed"})[0].startswith("tests")
+    assert promotion_gates(fl, tmp_path, bt, None) == ["tests: not run"]
+    (tmp_path / "fight_features.csv").write_text("a,b\n1,3\n")   # changed after the provenance check
+    assert any(f.startswith("provenance") for f in promotion_gates(fl, tmp_path, bt, ok))
 
 
 def test_lgbm_unseen_category_becomes_nan():

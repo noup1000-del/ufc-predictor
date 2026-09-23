@@ -45,6 +45,14 @@ def test_predict_only_and_single_stage(recorder):
     assert calls[2][2] is True  # explicit train stage forces training
 
 
+def test_backtest_mode_runs_only_the_backtest(recorder):
+    calls, make, monkeypatch = recorder
+    monkeypatch.setattr(rp, "STAGE_FUNCS", {**rp.STAGE_FUNCS, "backtest": make("backtest")})
+    assert rp.main(["--backtest"]) == 0
+    assert rp.main(["--stage", "backtest"]) == 0
+    assert [c[0] for c in calls] == ["backtest", "backtest"]
+
+
 def test_no_predict_stops_after_train(recorder):
     calls, _, _ = recorder
     assert rp.main(["--update", "--no-predict"]) == 0

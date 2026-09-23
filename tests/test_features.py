@@ -1,4 +1,4 @@
-import math
+﻿import math
 from pathlib import Path
 
 import numpy as np
@@ -155,7 +155,7 @@ def test_debut_is_nan_not_zero(feats):
 # --------------------------------------------------------------------------- leakage
 
 def test_no_row_uses_same_day_or_later_history(feats):
-    for c in ("_f1_hist_date", "_f2_hist_date"):
+    for c in ("_f1_source_max_date", "_f2_source_max_date"):
         used = feats[c].notna()
         assert (feats.loc[used, c] < feats.loc[used, "event_date"]).all()
 
@@ -204,12 +204,60 @@ def test_leakage_on_real_data_sample():
     from src.clean import load_processed
     tables = load_processed()
     feats = build_training_features(tables, load_config()["split"])
-    for c in ("_f1_hist_date", "_f2_hist_date"):
+    for c in ("_f1_source_max_date", "_f2_source_max_date"):
         used = feats[c].notna()
         assert (feats.loc[used, c] < feats.loc[used, "event_date"]).all()
     rng = np.random.default_rng(0)
     sample = rng.choice(feats.fight_id.unique(), size=12, replace=False)
     assert_features_match_truncated_history(tables, feats, sample)
+
+
+# --------------------------------------------------------------------------- registry & provenance
+
+def test_every_model_column_is_registered():
+    from src.features import CATEGORICAL, FEATURE_CATEGORIES, feature_category, numeric_feature_columns
+    cats = {c: feature_category(c) for c in numeric_feature_columns() + CATEGORICAL}
+    assert set(cats.values()) == set(FEATURE_CATEGORIES)
+    assert cats["diff_win_rate"] == "historical" and cats["f1_sig_def_l3"] == "historical"
+    assert cats["f2_reach_in"] == "imputed" and cats["diff_age"] == "imputed"
+    assert cats["f1_stance"] == "static" and cats["weight_class"] == "contextual"
+    with pytest.raises(KeyError):
+        feature_category("f1_betting_odds")
+
+
+def test_provenance_invariant_raises_value_error(feats):
+    from src.features import check_provenance
+    check_provenance(feats)                                   # real rows pass
+    bad = feats.copy()
+    bad.loc[5, "_f1_source_max_date"] = bad.loc[5, "event_date"]   # source on the fight date
+    with pytest.raises(ValueError, match="provenance"):
+        check_provenance(bad)
+    bad = feats.copy()
+    bad.loc[3, "_f2_source_max_date"] = bad.loc[3, "event_date"] + pd.Timedelta(days=30)
+    with pytest.raises(ValueError, match="provenance"):
+        check_provenance(bad)
+
+
+def test_source_max_date_covers_weight_class_history(tables):
+    # b's welterweight history (f5, 2009-06-01) feeds first_in_weight_class of f8 (2011-01-01).
+    f = build_training_features(tables, SPLIT)
+    r = row(f, "f8")
+    assert r.f1_first_in_weight_class == 0
+    assert r._f1_source_max_date == pd.Timestamp("2009-06-01")
+
+
+def test_audit_mode_lists_only_earlier_source_fights(tables):
+    f = build_training_features(tables, SPLIT, audit=True)
+    r = row(f, "f4")                   # a vs d on 2008-01-01
+    assert r._f1_source_fight_ids.split(";") == ["p1", "p2", "f1", "f3"]
+    assert r._f2_source_fight_ids == "f2"
+    r = row(f, "f5")                   # e debuts
+    assert r._f2_source_fight_ids == ""
+    fights = pd.concat([tables["fights"], tables["fights_prior"]]).set_index("fight_id").event_date
+    for _, x in f.iterrows():
+        for ids in (x._f1_source_fight_ids, x._f2_source_fight_ids):
+            assert all(fights[i] < x.event_date for i in ids.split(";") if i)
+    assert "_f1_source_fight_ids" not in build_training_features(tables, SPLIT).columns   # off by default
 
 
 # --------------------------------------------------------------------------- symmetry & split
