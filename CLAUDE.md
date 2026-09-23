@@ -210,7 +210,9 @@ python run_pipeline.py --stage features   # run a single stage
 
 Log start/end and row counts for each stage. Exit with a non-zero code on failure so a scheduler can detect it.
 
-Also: `--dry-run` (print the plan), `--card PATH` (card JSON for predict), `--force-train`. The train stage in `--update` runs only if there is no model, the processed data is newer than the model's `data_cutoff`, or the feature list changed; `--full` and `--stage train` always train. The pipeline stops at the first failing stage (exit 1). Logs also go to `logs/pipeline.log` (git-ignored).
+Also: `--dry-run` (print the plan), `--card PATH` (card JSON for predict), `--force-train`, `--no-predict` (stop after train; for the post-event job).
+
+Scheduling (weekly Monday results/tracking job + Wednesday prediction job, Windows Task Scheduler via `scripts/run_pipeline.bat`, cron, GitHub Actions): see `docs/scheduling.md`. The train stage in `--update` runs only if there is no model, the processed data is newer than the model's `data_cutoff`, or the feature list changed; `--full` and `--stage train` always train. The pipeline stops at the first failing stage (exit 1). Logs also go to `logs/pipeline.log` (git-ignored).
 
 ## Tests (tests/)
 

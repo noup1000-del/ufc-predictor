@@ -1,0 +1,6 @@
+event_date,weight_class,fighter_1,fighter_2,p_fighter_1,p_fighter_2,predicted_winner,confidence,model_version,predicted_at,event_name,bout_order,fighter_1_id,fighter_2_id,fighter_1_match,fighter_2_match,fighter_1_debut,fighter_2_debut
+2026-09-26,Bantamweight,Raul Rosas Jr.,Raoni Barcelos,0.6478,0.3522,Raul Rosas Jr.,0.6478,model_2026-09-23,2026-09-23T10:22:00+00:00,UFC Fight Night: Rosas Jr. vs. Barcelos,1,fe2babf95de24fb1,b9f28e7045fdfce7,exact,exact,0,0
+2026-09-26,Bantamweight,Brady Hiestand,Rinya Nakamura,0.3986,0.6014,Rinya Nakamura,0.6014,model_2026-09-23,2026-09-23T10:22:00+00:00,UFC Fight Night: Rosas Jr. vs. Barcelos,2,7af33fc4435017f1,d8c811df0386d5e8,exact,exact,0,0
+2026-09-26,Middleweight,Rodolfo Vieira,Robert Bryczek,0.6045,0.3955,Rodolfo Vieira,0.6045,model_2026-09-23,2026-09-23T10:22:00+00:00,UFC Fight Night: Rosas Jr. vs. Barcelos,3,260e9e0d4954aea6,f96856f9d69fd7e4,exact,exact,0,0
+2026-09-26,Women's Bantamweight,Norma Dumont,Ailin Perez,0.3831,0.6169,Ailin Perez,0.6169,model_2026-09-23,2026-09-23T10:22:00+00:00,UFC Fight Night: Rosas Jr. vs. Barcelos,4,d3f5d33d61cd00c9,06e4245d16fc5315,exact,exact,0,0
+2026-09-26,Bantamweight,Montel Jackson,Ricky Simon,0.5893,0.4107,Montel Jackson,0.5893,model_2026-09-23,2026-09-23T10:22:00+00:00,UFC Fight Night: Rosas Jr. vs. Barcelos,5,cc1a8b4b38b92c6d,5987b2458f4b5290,exact,exact,0,0

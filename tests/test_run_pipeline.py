@@ -45,6 +45,12 @@ def test_predict_only_and_single_stage(recorder):
     assert calls[2][2] is True  # explicit train stage forces training
 
 
+def test_no_predict_stops_after_train(recorder):
+    calls, _, _ = recorder
+    assert rp.main(["--update", "--no-predict"]) == 0
+    assert [c[0] for c in calls] == ["ingest", "clean", "features", "track", "train"]
+
+
 def test_failure_stops_pipeline_with_nonzero_exit(recorder):
     calls, make, monkeypatch = recorder
     funcs = dict(rp.STAGE_FUNCS)

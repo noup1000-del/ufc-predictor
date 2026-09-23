@@ -6,7 +6,7 @@
     python run_pipeline.py --stage features  one stage (ingest|clean|features|track|train|predict)
     python run_pipeline.py --dry-run         show the plan without running anything
 
-Options: --card PATH (card JSON for predict), --force-train.
+Options: --card PATH (card JSON for predict), --force-train, --no-predict (stop after train).
 Exit code 0 on success, 1 if any stage fails (later stages are not run).
 """
 from __future__ import annotations
@@ -134,7 +134,10 @@ def plan(args: argparse.Namespace) -> tuple[list[str], Context]:
         if args.stage == "train":
             ctx.force_train = True  # asking for the train stage means train
         return [args.stage], ctx
-    return list(STAGES), ctx
+    stages = list(STAGES)
+    if args.no_predict:
+        stages.remove("predict")
+    return stages, ctx
 
 
 def run(stages: list[str], ctx: Context) -> int:
@@ -163,6 +166,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     mode.add_argument("--stage", choices=STAGES)
     p.add_argument("--card", type=Path, help="card JSON for the predict stage")
     p.add_argument("--force-train", action="store_true")
+    p.add_argument("--no-predict", action="store_true",
+                   help="with --update/--full: stop after train (e.g. a post-event results/tracking job)")
     p.add_argument("--dry-run", action="store_true", help="print the plan and exit")
     return p.parse_args(argv)
 
