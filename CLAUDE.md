@@ -179,6 +179,8 @@ Implementation notes (src/features.py):
 - Metrics: log loss, Brier score, accuracy, and a calibration table (bins of predicted probability vs actual win rate). Report all models side by side.
 - Save the model to `models/model_<YYYY-MM-DD>.pkl` and a JSON with training date, data cutoff, feature list and metrics. Keep `models/latest.pkl` pointing to the current one.
 - Print feature importances. If any single feature is suspiciously dominant, flag it as possible leakage.
+- **Bio missingness leaks the future:** ufcstats fills in reach/height/DOB over time for fighters who stay, so historically a missing value marks short careers (train: fighters with missing reach won 9%; recent debutants with missing reach win ~50%). `train.PhysicalImputer` (fitted on the training rows, stored in the model) fills height/reach/age before both models; the feature file keeps NaN. `train.missingness_report` logs target rate by missingness every run; investigate any new feature whose missingness is far from 50%.
+- Metrics are per fight on symmetric probabilities; ties at p = 0.5 use a deterministic coin flip. The production model is the logistic/LightGBM model with the lower validation log loss, refit on all data. `models/latest.pkl` / `latest.json` are copies (no symlinks on Windows).
 
 ## Stage 5: predict.py
 

@@ -41,10 +41,21 @@ split:
   valid_end: "2025-01-01"   # validate: train_end <= date < valid_end; test: >= valid_end
 
 model:
-  lightgbm:
-    n_estimators: 500
-    learning_rate: 0.03
-    num_leaves: 15
-    min_child_samples: 40
+  random_seed: 42
   logistic:
-    C: 1.0
+    C_grid: [0.01, 0.03, 0.1, 0.3, 1.0]   # chosen by validation log loss
+  lightgbm:
+    learning_rate: 0.02
+    max_estimators: 3000                  # early stopping on validation picks the count
+    early_stopping_rounds: 100
+    grid:                                 # light tuning on validation log loss
+      num_leaves: [7, 15, 31]
+      min_child_samples: [20, 50, 100]
+    fixed:
+      subsample: 0.8
+      subsample_freq: 1
+      colsample_bytree: 0.7
+      reg_lambda: 1.0
+  # Flag possible leakage if one feature has more than this share of total LightGBM gain.
+  dominance_threshold: 0.25
+  calibration_bins: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 1.0]
