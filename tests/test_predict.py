@@ -1,3 +1,6 @@
+import re
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -134,27 +137,89 @@ def test_html_report_structure(tables, lgbm_artifact, tmp_path):
         assert external not in html   # fully self-contained
 
 
-def test_schedule_index_structure():
+def dashboard_entries(tables, artifact):
+    """Three scheduled events, out of order: two predicted cards and one without bouts."""
+    entries = []
+    for name, day, bouts in [
+        ("UFC 999: Later & <Card>", "2030-02-01", [("A", "a", "B", "b", "Lightweight")]),
+        ("UFC Fight Night: Raúl vs O'Brien", "2030-01-10",
+         [("A", "a", "B", "b", "Lightweight"), ("E", "e", "New Guy", None, "Welterweight")]),
+        ("UFC Fight Night: Card TBA", "2030-03-01", []),
+    ]:
+        entry = {"event_name": name, "event_date": day, "location": "Vegas, NV", "bouts": len(bouts),
+                 "report": None, "headliner": None, "unmatched": 0, "pred": None}
+        if bouts:
+            pred = predict_card(card(day, bouts), tables, artifact, predicted_at="2030-01-01T00:00:00+00:00")
+            main = pred.iloc[0]
+            entry.update(report=f"{day}_x.html", pred=pred, unmatched=int(pred.fighter_2_id.isna().sum()),
+                         headliner={k: main[k] for k in ("fighter_1", "fighter_2", "p_fighter_1", "p_fighter_2",
+                                                         "predicted_winner", "confidence", "weight_class")})
+        entry["event_name"] = name  # card() names the event itself; keep ours
+        entries.append(entry)
+    return entries
+
+
+def test_dashboard_contains_every_event_and_the_tab_switcher(tables, lgbm_artifact):
     from src.report import render_index
-    meta = {"model_version": "model_x", "model_type": "lightgbm", "data_cutoff": "2030-01-01"}
-    head = {"fighter_1": "A <b>", "fighter_2": "O'Brien", "p_fighter_1": 0.62, "p_fighter_2": 0.38,
-            "predicted_winner": "A <b>", "confidence": 0.62, "weight_class": "Lightweight"}
-    entries = [
-        {"event_name": "UFC 999: Later", "event_date": "2030-02-01", "location": None, "bouts": 0,
-         "report": None, "headliner": None, "unmatched": 0},
-        {"event_name": "UFC Fight Night: A & B", "event_date": "2030-01-10", "location": "Vegas, NV",
-         "bouts": 12, "report": "2030-01-10_ufc-fight-night-a-b.html", "headliner": head, "unmatched": 2},
-    ]
-    html = render_index(entries, meta, generated="2030-01-01T00:00:00+00:00")
+    html = render_index(dashboard_entries(tables, lgbm_artifact), lgbm_artifact["metadata"],
+                        generated="2030-01-01T00:00:00+00:00")
     assert html.startswith("<!doctype html>") and html.rstrip().endswith("</html>")
-    assert html.index("A &amp; B") < html.index("UFC 999: Later")          # chronological
-    assert html.count('<li class="event') == 2 and html.count('class="label-next"') == 1
-    assert 'href="2030-01-10_ufc-fight-night-a-b.html"' in html
-    assert "62.0%" in html and "38.0%" in html and "Card not announced yet" in html
-    assert "2 fighter(s) not in UFC data" in html
-    assert "A &lt;b&gt;" in html and "O&#x27;Brien" in html                 # escaped
-    for external in ("http://", "https://", "<script", "<link", "@import", "url("):
+    ids = re.findall(r'<section class="event-panel" id="([a-z0-9-]+)"', html)
+    assert ids == ["ufc-fight-night-ra-l-vs-o-brien", "ufc-999-later-card", "ufc-fight-night-card-tba"]  # by date
+    assert re.findall(r'<a class="tab[^"]*" role="tab" id="tab-([a-z0-9-]+)" href="#\1" data-target="\1"', html) == ids
+    assert re.findall(r'<option value="([a-z0-9-]+)">', html) == ids                       # mobile <select>
+    assert '<html lang="en" data-default="ufc-fight-night-ra-l-vs-o-brien">' in html      # next card with bouts
+    assert "UFC 999 <span class=\"date-badge\">Feb 1</span>" in html                     # short title + date badge
+    assert "Raúl vs O&#x27;Brien <span class=\"date-badge\">Jan 10</span>" in html
+    # every bout of every predicted card is embedded, with probability bars, picks, debut flags, drivers
+    assert html.count('<article class="bout">') == 3 and html.count("badge pick") == 3
+    assert html.count("badge debut") == 1 and "Favours" in html
+    assert "No bouts announced yet" in html and "Later &amp; &lt;Card&gt;" in html          # escaped
+    # tab logic: one inline script, hash deep links, no external code
+    assert html.count("<script>") == 1 and "hashchange" in html and "pushState" in html
+    assert 'setAttribute("data-dashboard", "ready")' in html
+    for external in ("http://", "https://", "<script src", "<link", "@import", "url("):
         assert external not in html
+
+
+def _browser() -> str | None:
+    import shutil
+    candidates = [shutil.which(n) for n in ("msedge", "chrome", "google-chrome", "chromium", "chromium-browser")]
+    candidates += [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                   r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+                   r"C:\Program Files\Google\Chrome\Application\chrome.exe"]
+    return next((c for c in candidates if c and Path(c).exists()), None)
+
+
+def _rendered_dom(browser: str, page: Path, fragment: str, profile: Path) -> str:
+    import subprocess
+    url = page.resolve().as_uri() + fragment
+    out = subprocess.run([browser, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+                          f"--user-data-dir={profile}", "--dump-dom", url],
+                         capture_output=True, text=True, encoding="utf-8", timeout=90)
+    return out.stdout
+
+
+@pytest.mark.parametrize("fragment, active", [
+    ("", "ufc-fight-night-ra-l-vs-o-brien"),               # default: the next card with bouts
+    ("#ufc-999-later-card", "ufc-999-later-card"),        # deep link
+    ("#no-such-event", "ufc-fight-night-ra-l-vs-o-brien"),  # unknown hash falls back to the default
+])
+def test_dashboard_script_runs_in_a_real_browser(tables, lgbm_artifact, tmp_path, fragment, active):
+    """Runs the page in headless Edge/Chrome: the script's last statement marks the page ready,
+    so any script error leaves the marker out. Skipped when no browser is installed."""
+    from src.report import render_index
+    browser = _browser()
+    if browser is None:
+        pytest.skip("no Chromium-based browser available for the headless check")
+    page = tmp_path / "index.html"
+    page.write_text(render_index(dashboard_entries(tables, lgbm_artifact), lgbm_artifact["metadata"]),
+                    encoding="utf-8")
+    dom = _rendered_dom(browser, page, fragment, tmp_path / "profile")
+    assert 'data-dashboard="ready"' in dom, dom[:500]
+    shown = re.findall(r'<section class="event-panel" id="([a-z0-9-]+)"(?![^>]*hidden)', dom)
+    assert shown == [active]
+    assert re.search(rf'<a class="tab[^"]*active[^"]*"[^>]*data-target="{active}"[^>]*aria-selected="true"', dom)
 
 
 def test_slugify():

@@ -1,12 +1,16 @@
-"""Self-contained HTML report for a predicted card (embedded CSS, no scripts, no external
-resources, so it works offline and can be emailed as a single file)."""
+"""Self-contained HTML reports: one page per predicted card (embedded CSS, no scripts, no
+external resources, so it works offline and can be emailed as a single file), and the
+multi-event dashboard index.html (same, plus one small inline script for the event tabs)."""
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, timezone
 from html import escape
 from types import SimpleNamespace
 
 import pandas as pd
+
+from src.upcoming import slugify
 
 CSS = """
 :root {
@@ -63,40 +67,58 @@ a { color: inherit; }
 .back:hover { color: var(--text); }
 """
 
-INDEX_CSS = """
-.events { display: flex; flex-direction: column; gap: 12px; list-style: none; margin: 0; padding: 0; }
-.event { display: grid; grid-template-columns: 78px 1fr minmax(0, 420px); gap: 16px; align-items: center;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
-.event.next { border-color: var(--pick); }
-.when { text-align: center; border-right: 1px solid var(--line); padding-right: 12px; }
-.when .dow { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
-.when .day { font-size: 26px; font-weight: 750; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.when .mon { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
-.info h2 { margin: 0 0 4px; font-size: 17px; line-height: 1.25; }
-.info h2 a { text-decoration: none; }
-.info h2 a:hover { text-decoration: underline; }
-.info .sub { color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
-.info .sub .warn { color: var(--debut); }
-.head { display: flex; flex-direction: column; gap: 6px; }
-.head .names { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 600; }
-.head .names span { min-width: 0; overflow-wrap: anywhere; }
-.head .names .p { font-variant-numeric: tabular-nums; font-weight: 700; }
-.head .n1 .p { color: var(--f1); }
-.head .n2 { text-align: right; }
-.head .n2 .p { color: var(--f2); }
-.head .pickline { color: var(--muted); font-size: 12px; }
-.head .pickline b { color: var(--pick); font-weight: 650; }
-.head.empty { color: var(--muted); font-size: 13px; }
-.cta { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--pick);
-  text-decoration: none; }
-.cta:hover { text-decoration: underline; }
-.label-next { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #1b1300;
-  background: var(--pick); border-radius: 999px; padding: 1px 7px; vertical-align: 2px; margin-left: 6px; }
-@media (max-width: 760px) {
-  .event { grid-template-columns: 64px 1fr; }
-  .head { grid-column: 1 / -1; }
+DASHBOARD_CSS = """
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.appbar { position: sticky; top: 0; z-index: 10; background: rgba(13, 17, 23, .94);
+  backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+.appbar-inner { max-width: 1180px; margin: 0 auto; padding: 12px 16px 8px; display: flex;
+  align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; flex-direction: column; min-width: 0; }
+.brand-title { font-weight: 700; font-size: 18px; }
+.picker { display: none; flex: 1; max-width: 320px; }
+.picker select { width: 100%; background: var(--panel); color: var(--text); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 14px; }
+.tabs { max-width: 1180px; margin: 0 auto; padding: 0 16px 10px; display: flex; gap: 8px; overflow-x: auto;
+  scrollbar-width: thin; }
+.tab { flex: 0 0 auto; display: flex; flex-direction: column; gap: 2px; padding: 7px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--muted); text-decoration: none;
+  max-width: 230px; }
+.tab:hover { color: var(--text); border-color: var(--muted); }
+.tab:focus-visible { outline: 2px solid var(--pick); outline-offset: 2px; }
+.tab .tab-title { color: var(--text); font-weight: 650; font-size: 14px; white-space: nowrap; }
+.tab .tab-sub { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.date-badge { display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 999px; font-size: 11px;
+  font-weight: 700; background: var(--panel-2); color: var(--muted); border: 1px solid var(--line);
+  vertical-align: 1px; }
+.tab.next .date-badge { border-color: var(--pick); color: var(--pick); }
+.tab.active { background: var(--panel-2); border-color: var(--pick); color: var(--text); }
+.tab.active .date-badge { background: var(--pick); color: #1b1300; border-color: var(--pick); }
+.summary { margin: 0 0 18px; }
+.event-panel { scroll-margin-top: 130px; }
+html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--line); }
+.panel-head { margin-bottom: 18px; }
+.panel-head h2 { font-size: clamp(22px, 4vw, 30px); margin: 0 0 8px; line-height: 1.15; }
+.panel-head .warn { color: var(--debut); }
+.standalone { color: var(--pick); text-decoration: none; font-weight: 600; }
+.standalone:hover { text-decoration: underline; }
+.label-next { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #1b1300;
+  background: var(--pick); border-radius: 999px; padding: 2px 8px; vertical-align: 5px; margin-left: 10px; }
+.empty { color: var(--muted); background: var(--panel); border: 1px dashed var(--line); border-radius: 12px;
+  padding: 24px 16px; text-align: center; }
+@media (max-width: 720px) {
+  .picker { display: block; }
+  .tabs { display: none; }
+  .brand .kicker { display: none; }
+  .brand-title { font-size: 15px; }
+  .event-panel { scroll-margin-top: 70px; }
+  html:not(.js) .picker { display: none; }
+  html:not(.js) .tabs { display: flex; }
 }
 """
+
+
+def _bouts(n: int) -> str:
+    return f"{n} bout" if n == 1 else f"{n} bouts"
 
 
 def _pct(p: float) -> str:
@@ -159,18 +181,33 @@ def _bout_card(r) -> str:
 </article>"""
 
 
-def render_html(pred: pd.DataFrame, card, meta: dict, index_link: bool = False) -> str:
-    """`pred` is predict.predict_card() output (with `_drivers`); `card` has event_name/event_date.
-    `index_link` adds a link to index.html in the same folder (the schedule overview)."""
-    d = date.fromisoformat(card.event_date)
-    generated = str(pred["predicted_at"].iloc[0]) if len(pred) else ""
-    # records, not itertuples: itertuples renames the `_drivers` column
-    cards = "".join(_bout_card(SimpleNamespace(**r)) for r in pred.sort_values("bout_order").to_dict("records"))
+FOOTER_NOTE = ("Probabilities average both fighter orders, so they always sum to 100%. Key factors are the "
+               "model's feature contributions (in log-odds, combined over both orders): each tag shows the "
+               "values for the fighter on the left vs the right, and the bar shows its size relative to the "
+               "strongest factor in that bout. Factors explain this model's estimate, not what will happen "
+               "in the fight.")
+
+
+def _accuracy_note(meta: dict) -> str:
     try:
         acc = meta["evaluation"]["metrics"][meta["model_type"]]["test"]["accuracy"]
-        acc_note = f" On held-out test fights this model picked the winner {acc:.0%} of the time."
     except (KeyError, TypeError):
-        acc_note = ""
+        return ""
+    return f" On held-out test fights this model picked the winner {acc:.0%} of the time."
+
+
+def _bout_grid(pred: pd.DataFrame) -> str:
+    # records, not itertuples: itertuples renames the `_drivers` column
+    return "".join(_bout_card(SimpleNamespace(**r)) for r in pred.sort_values("bout_order").to_dict("records"))
+
+
+def render_html(pred: pd.DataFrame, card, meta: dict, index_link: bool = False) -> str:
+    """`pred` is predict.predict_card() output (with `_drivers`); `card` has event_name/event_date.
+    `index_link` adds a link to this event in index.html (the dashboard, same folder)."""
+    d = date.fromisoformat(card.event_date)
+    generated = str(pred["predicted_at"].iloc[0]) if len(pred) else ""
+    cards = _bout_grid(pred)
+    acc_note = _accuracy_note(meta)
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -182,7 +219,7 @@ def render_html(pred: pd.DataFrame, card, meta: dict, index_link: bool = False) 
 <body>
 <div class="wrap">
   <header class="top">
-    {'<a class="back" href="index.html">&larr; All upcoming events</a>' if index_link else ""}
+    {f'<a class="back" href="index.html#{event_slug(card.event_name)}">&larr; All upcoming events</a>' if index_link else ""}
     <div class="kicker">Fight predictions</div>
     <h1>{escape(card.event_name)}</h1>
     <div class="meta">
@@ -190,17 +227,13 @@ def render_html(pred: pd.DataFrame, card, meta: dict, index_link: bool = False) 
       <span>Venue <b>{escape(card.location)}</b></span>''' if getattr(card, "location", None) else ""}
       <span>Model <b>{escape(str(meta.get("model_version", "")))}</b> ({escape(str(meta.get("model_type", "")))}, data to {escape(str(meta.get("data_cutoff", "")))})</span>
       <span>Generated <b>{escape(generated)}</b></span>
-      <span>{len(pred)} bouts</span>
+      <span>{_bouts(len(pred))}</span>
     </div>
   </header>
   <main class="grid">{cards}
   </main>
   <footer>
-    Probabilities average both fighter orders, so they always sum to 100%. Key factors are the
-    model's feature contributions (in log-odds, combined over both orders): each tag shows the
-    values for the fighter on the left vs the right, and the bar shows its size relative to the
-    strongest factor in that bout. Factors explain this model's estimate, not what will happen
-    in the fight.{acc_note}
+    {FOOTER_NOTE}{acc_note}
   </footer>
 </div>
 </body>
@@ -208,78 +241,197 @@ def render_html(pred: pd.DataFrame, card, meta: dict, index_link: bool = False) 
 """
 
 
-def _index_row(e: dict, is_next: bool) -> str:
-    d = date.fromisoformat(e["event_date"])
-    name = escape(e["event_name"])
-    title = f'<a href="{escape(e["report"])}">{name}</a>' if e.get("report") else name
-    if is_next:
-        title += '<span class="label-next">Next</span>'
-    sub = []
-    if e.get("location"):
-        sub.append(f"<span>{escape(e['location'])}</span>")
-    sub.append(f"<span>{e['bouts']} bouts</span>" if e["bouts"] else "<span>Card not announced yet</span>")
-    if e.get("unmatched"):
-        sub.append(f'<span class="warn">{e["unmatched"]} fighter(s) not in UFC data (debuts?)</span>')
+def event_slug(event_name: str) -> str:
+    """Anchor/id for an event: `UFC 332: Silva vs Wang` -> `ufc-332-silva-vs-wang`."""
+    return slugify(event_name) or "event"
 
-    h = e.get("headliner")
-    if h:
-        p1, p2 = float(h["p_fighter_1"]), float(h["p_fighter_2"])
-        aria = f"{h['fighter_1']} {_pct(p1)}, {h['fighter_2']} {_pct(p2)}"
-        wc = f" · {escape(str(h['weight_class']))}" if isinstance(h.get("weight_class"), str) else ""
-        head = f"""<div class="head">
-      <div class="names"><span class="n1">{escape(h["fighter_1"])} <span class="p">{_pct(p1)}</span></span><span class="n2"><span class="p">{_pct(p2)}</span> {escape(h["fighter_2"])}</span></div>
-      <div class="bar" role="img" aria-label="{escape(aria)}"><span class="seg f1" style="width:{100 * p1:.1f}%"></span><span class="seg f2" style="width:{100 * p2:.1f}%"></span></div>
-      <div class="pickline">Main event{wc} · pick <b>{escape(h["predicted_winner"])}</b> ({float(h["confidence"]):.0%})</div>
-    </div>"""
-        cta = f'<a class="cta" href="{escape(e["report"])}">Full card predictions &rarr;</a>'
+
+def short_title(event_name: str) -> str:
+    """Tab label: `UFC 332: Silva vs Wang` -> `UFC 332`; `UFC Fight Night: Allen vs Duncan` ->
+    `Allen vs Duncan`; anything else unchanged."""
+    m = re.match(r"^((?:Noche )?UFC \d+)\b", event_name)
+    if m:
+        return m.group(1)
+    head, sep, tail = event_name.partition(":")
+    return tail.strip() if sep and tail.strip() else event_name
+
+
+def _headliner_bar(h: dict) -> str:
+    p1, p2 = float(h["p_fighter_1"]), float(h["p_fighter_2"])
+    aria = f"{h['fighter_1']} {_pct(p1)}, {h['fighter_2']} {_pct(p2)}"
+    return (f'<div class="bar" role="img" aria-label="{escape(aria)}"><span class="seg f1" '
+            f'style="width:{100 * p1:.1f}%"></span><span class="seg f2" style="width:{100 * p2:.1f}%"></span></div>')
+
+
+def _panel(e: dict, slug: str, is_next: bool) -> str:
+    d = date.fromisoformat(e["event_date"])
+    facts = [f'<span>Date <b>{d.strftime("%A %d %B %Y")}</b></span>']
+    if e.get("location"):
+        facts.append(f'<span>Venue <b>{escape(e["location"])}</b></span>')
+    facts.append(f"<span>{_bouts(e['bouts'])}</span>" if e["bouts"] else "<span>Card not announced yet</span>")
+    if e.get("unmatched"):
+        facts.append(f'<span class="warn">{e["unmatched"]} fighter(s) not in UFC data (treated as debuts)</span>')
+    if e.get("report"):
+        facts.append(f'<a class="standalone" href="{escape(e["report"])}">Standalone page</a>')
+    pred = e.get("pred")
+    if pred is not None and len(pred):
+        body = f'<div class="grid">{_bout_grid(pred)}\n  </div>'
     else:
-        head = '<div class="head empty">No bouts announced yet, so nothing to predict.</div>'
-        cta = ""
+        body = '<p class="empty">No bouts announced yet, so nothing to predict. Check back after the next schedule fetch.</p>'
+    label = '<span class="label-next">Next event</span>' if is_next else ""
     return f"""
-  <li class="event{' next' if is_next else ''}">
-    <div class="when"><div class="dow">{d.strftime("%a")}</div><div class="day">{d.day}</div><div class="mon">{d.strftime("%b %Y")}</div></div>
-    <div class="info"><h2>{title}</h2><div class="sub">{"".join(sub)}</div>{cta}</div>
-    {head}
-  </li>"""
+<section class="event-panel" id="{slug}" data-title="{escape(e["event_name"])}" aria-labelledby="h-{slug}">
+  <header class="panel-head">
+    <h2 id="h-{slug}">{escape(e["event_name"])}{label}</h2>
+    <div class="meta">{"".join(facts)}</div>
+  </header>
+  {body}
+</section>"""
+
+
+def _tab(e: dict, slug: str, is_next: bool) -> str:
+    d = date.fromisoformat(e["event_date"])
+    badge = f'{d.strftime("%b")} {d.day}'
+    h = e.get("headliner")
+    sub = (f'<span class="tab-sub">{escape(h["fighter_1"])} vs {escape(h["fighter_2"])}</span>'
+           if h else '<span class="tab-sub">Card TBA</span>')
+    return (f'<a class="tab{" next" if is_next else ""}" role="tab" id="tab-{slug}" href="#{slug}" '
+            f'data-target="{slug}" aria-controls="{slug}">'
+            f'<span class="tab-title">{escape(short_title(e["event_name"]))} '
+            f'<span class="date-badge">{badge}</span></span>{sub}</a>')
+
+
+def _option(e: dict, slug: str) -> str:
+    d = date.fromisoformat(e["event_date"])
+    return f'<option value="{slug}">{escape(short_title(e["event_name"]))} ({d.strftime("%b")} {d.day})</option>'
+
+
+# Tab switching. Plain ES5, no external code. Without JavaScript every panel is shown
+# stacked and the tabs are ordinary in-page links. The last statement marks the page as
+# ready, which the tests use to detect script errors in a real browser.
+DASHBOARD_JS = """
+(function () {
+  var root = document.documentElement;
+  var panels = Array.prototype.slice.call(document.querySelectorAll(".event-panel"));
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab[data-target]"));
+  var select = document.getElementById("event-select");
+  var ids = panels.map(function (p) { return p.id; });
+  var baseTitle = document.title;
+
+  function resolve(id) {
+    if (ids.indexOf(id) >= 0) { return id; }
+    var fallback = root.getAttribute("data-default");
+    return ids.indexOf(fallback) >= 0 ? fallback : ids[0];
+  }
+
+  function show(id, updateUrl) {
+    id = resolve(id);
+    panels.forEach(function (p) {
+      var on = p.id === id;
+      p.hidden = !on;
+      if (on) { document.title = p.getAttribute("data-title") + " \\u00b7 " + baseTitle; }
+    });
+    tabs.forEach(function (t) {
+      var on = t.getAttribute("data-target") === id;
+      t.classList.toggle("active", on);
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.setAttribute("tabindex", on ? "0" : "-1");
+      if (on && t.scrollIntoView) { t.scrollIntoView({block: "nearest", inline: "nearest"}); }
+    });
+    if (select) { select.value = id; }
+    if (updateUrl && window.location.hash !== "#" + id) {
+      try { history.pushState(null, "", "#" + id); } catch (e) { window.location.hash = id; }
+    }
+  }
+
+  function currentHash() {
+    try { return decodeURIComponent(window.location.hash.slice(1)); } catch (e) { return ""; }
+  }
+
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      show(t.getAttribute("data-target"), true);
+    });
+    t.addEventListener("keydown", function (ev) {
+      var step = ev.key === "ArrowRight" ? 1 : ev.key === "ArrowLeft" ? -1 : 0;
+      if (!step) { return; }
+      ev.preventDefault();
+      var next = tabs[(i + step + tabs.length) % tabs.length];
+      show(next.getAttribute("data-target"), true);
+      next.focus();
+    });
+  });
+  if (select) {
+    select.addEventListener("change", function () { show(select.value, true); });
+  }
+  window.addEventListener("hashchange", function () { show(currentHash(), false); });
+  window.addEventListener("popstate", function () { show(currentHash(), false); });
+
+  root.classList.add("js");
+  show(currentHash(), false);
+  root.setAttribute("data-dashboard", "ready");
+})();
+"""
 
 
 def render_index(entries: list[dict], meta: dict, generated: str | None = None) -> str:
-    """Schedule overview: one row per scheduled event (chronological), linking to each report.
+    """Single-file dashboard of every scheduled card: event tabs (a <select> on narrow
+    screens), one `<section class="event-panel" id="<event_slug>">` per event with all bout
+    cards, `#<event_slug>` deep links, default = the next event with bouts.
 
     `entries` come from predict.run_predict_all: event_name, event_date, location, bouts,
-    report (html file name or None), unmatched, headliner (main-event prediction or None)."""
+    report (standalone html file name or None), unmatched, headliner (main-event prediction or
+    None) and pred (predict_card output with `_drivers`, or None). Self-contained: embedded CSS
+    and one inline script, no external resources; everything still shows without JavaScript."""
     generated = generated or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     entries = sorted(entries, key=lambda e: (e["event_date"], e["event_name"]))
-    next_i = next((i for i, e in enumerate(entries) if e.get("headliner")), None)
-    rows = "".join(_index_row(e, i == next_i) for i, e in enumerate(entries))
+    slugs, seen = [], set()
+    for e in entries:
+        s = event_slug(e["event_name"])
+        if s in seen:
+            s = f"{s}-{e['event_date']}"
+        seen.add(s)
+        slugs.append(s)
+    next_i = next((i for i, e in enumerate(entries) if e.get("headliner")), 0 if entries else None)
+    default = slugs[next_i] if next_i is not None else ""
+
+    tabs = "".join(_tab(e, s, i == next_i) for i, (e, s) in enumerate(zip(entries, slugs)))
+    options = "".join(_option(e, s) for e, s in zip(entries, slugs))
+    panels = "".join(_panel(e, s, i == next_i) for i, (e, s) in enumerate(zip(entries, slugs)))
     predicted = sum(1 for e in entries if e.get("headliner"))
+    n_bouts = sum(len(e["pred"]) for e in entries if e.get("pred") is not None)
     return f"""<!doctype html>
-<html lang="en">
+<html lang="en" data-default="{default}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upcoming UFC predictions</title>
-<style>{CSS}{INDEX_CSS}</style>
+<style>{CSS}{DASHBOARD_CSS}</style>
 </head>
 <body>
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand"><span class="kicker">Fight predictions</span><span class="brand-title">Upcoming UFC events</span></div>
+    <label class="picker"><span class="sr-only">Choose an event</span>
+      <select id="event-select">{options}</select></label>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Events">{tabs}</nav>
+</header>
 <div class="wrap">
-  <header class="top">
-    <div class="kicker">Fight predictions</div>
-    <h1>Upcoming UFC events</h1>
-    <div class="meta">
-      <span><b>{len(entries)}</b> scheduled events, <b>{predicted}</b> with predictions</span>
-      <span>Model <b>{escape(str(meta.get("model_version", "")))}</b> ({escape(str(meta.get("model_type", "")))}, data to {escape(str(meta.get("data_cutoff", "")))})</span>
-      <span>Generated <b>{escape(generated)}</b></span>
-    </div>
-  </header>
-  <ul class="events">{rows}
-  </ul>
+  <div class="meta summary">
+    <span><b>{len(entries)}</b> scheduled events, <b>{predicted}</b> predicted, <b>{n_bouts}</b> bouts</span>
+    <span>Model <b>{escape(str(meta.get("model_version", "")))}</b> ({escape(str(meta.get("model_type", "")))}, data to {escape(str(meta.get("data_cutoff", "")))})</span>
+    <span>Generated <b>{escape(generated)}</b></span>
+  </div>
+  <main>{panels}
+  </main>
   <footer>
     Schedule and bouts from the official UFC event pages; cards change often, so later events are
-    more likely to change before fight night. Each bar shows the main event's win probability
-    (averaged over both fighter orders). Open an event for every bout and its key factors.
+    more likely to change before fight night. {FOOTER_NOTE}{_accuracy_note(meta)}
   </footer>
 </div>
+<script>{DASHBOARD_JS}</script>
 </body>
 </html>
 """
