@@ -14,6 +14,8 @@ http:
   timeout_sec: 15
   max_attempts: 3
   backoff_base_sec: 2       # waits 2s, 4s between attempts
+  host_min_interval_sec:    # stricter per-host limits (robots.txt crawl-delay)
+    www.ufc.com: 15
 
 source:
   repo: Greco1899/scrape_ufc_stats
@@ -29,6 +31,10 @@ source:
 
 upcoming:
   manual_card_file: data/raw/upcoming_card.json
+  cards_dir: data/raw/cards               # one JSON per scheduled card (written by the ufc.com fetch)
+  aliases_file: upcoming_aliases.csv      # committed, verified card-name -> fighter_id fixes
+  ufc_events_url: https://www.ufc.com/events
+  ufc_base_url: https://www.ufc.com
   espn_scoreboard_url: https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard
   espn_cache_dir: data/raw/espn
   lookahead_days: 45

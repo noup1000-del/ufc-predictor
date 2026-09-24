@@ -57,6 +57,18 @@ def test_rate_limiter_spaces_calls():
     assert c.sleeps == pytest.approx([1.0, 0.7])
 
 
+def test_per_host_interval_applies_only_to_that_host(tmp_path):
+    clock = FakeClock()
+    session = FakeSession([FakeResponse() for _ in range(4)])
+    client = HttpClient(tmp_path, "test-agent", min_interval=1.0, session=session, sleep=clock.sleep,
+                        clock=clock.clock, host_intervals={"www.ufc.com": 15})
+    client.get("https://www.ufc.com/events")
+    client.get("https://www.ufc.com/event/a")   # waits for the 15s crawl delay
+    client.get("https://example.org/x")         # other hosts: only the global 1s limit (clock is frozen)
+    client.get("https://example.org/y")
+    assert clock.sleeps == pytest.approx([15.0, 1.0, 1.0])
+
+
 def test_fetch_caches_and_reuses(tmp_path):
     client, session, _ = make_client(tmp_path, [FakeResponse(content=b"<p>x</p>")])
     assert client.fetch("fight", "abc123", "http://x/abc123") == "<p>x</p>"

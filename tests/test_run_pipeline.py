@@ -53,6 +53,15 @@ def test_backtest_mode_runs_only_the_backtest(recorder):
     assert [c[0] for c in calls] == ["backtest", "backtest"]
 
 
+def test_predict_all_runs_only_the_multi_card_stage(recorder):
+    calls, make, monkeypatch = recorder
+    monkeypatch.setattr(rp, "STAGE_FUNCS", {**rp.STAGE_FUNCS, "predict_all": make("predict_all")})
+    assert rp.main(["--predict-all"]) == 0
+    assert [c[0] for c in calls] == ["predict_all"]
+    with pytest.raises(SystemExit):
+        rp.main(["--predict-all", "--predict-only"])   # modes are mutually exclusive
+
+
 def test_no_predict_stops_after_train(recorder):
     calls, _, _ = recorder
     assert rp.main(["--update", "--no-predict"]) == 0

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UFC 332: Silva vs Wang predictions</title>
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --panel-2: #1c232d; --line: #2a3340;
+  --text: #e6edf3; --muted: #8b98a8; --f1: #e5534b; --f2: #4493f8;
+  --pick: #f2c14e; --debut: #b083f0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 16px 40px; }
+header.top { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+.kicker { color: var(--muted); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+h1 { font-size: clamp(22px, 4vw, 32px); margin: 6px 0 8px; line-height: 1.15; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 13px; }
+.meta b { color: var(--text); font-weight: 600; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); }
+.bout { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+  display: flex; flex-direction: column; gap: 12px; }
+.bout-head { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px;
+  text-transform: uppercase; letter-spacing: .08em; }
+.bout-head .order { color: var(--text); font-weight: 700; }
+.fighter { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  background: var(--panel-2); border-left: 4px solid transparent; }
+.fighter.f1 { border-left-color: var(--f1); }
+.fighter.f2 { border-left-color: var(--f2); }
+.fighter.winner { outline: 1px solid var(--pick); }
+.fighter .name { font-weight: 650; font-size: 16px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fighter .prob { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 17px; }
+.fighter.f1 .prob { color: var(--f1); }
+.fighter.f2 .prob { color: var(--f2); }
+.badge { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px;
+  padding: 2px 8px; white-space: nowrap; }
+.badge.pick { background: var(--pick); color: #1b1300; }
+.badge.debut { border: 1px solid var(--debut); color: var(--debut); }
+.note { color: var(--muted); font-size: 12px; margin: -6px 0 0 14px; }
+.bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--line); }
+.bar .seg.f1 { background: var(--f1); }
+.bar .seg.f2 { background: var(--f2); }
+.drivers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.drivers h3 { margin: 0 0 6px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
+  font-weight: 600; }
+.drivers ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tag { background: var(--panel-2); border-radius: 6px; padding: 6px 8px; font-size: 13px; }
+.tag .v { display: block; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tag .s { display: block; height: 3px; border-radius: 2px; margin-top: 5px; }
+.col.f1 .tag .s { background: var(--f1); }
+.col.f2 .tag .s { background: var(--f2); }
+.none { color: var(--muted); font-size: 13px; }
+footer { margin-top: 26px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
+@media (max-width: 420px) { .drivers { grid-template-columns: 1fr; } }
+a { color: inherit; }
+.back { display: inline-block; margin-bottom: 10px; color: var(--muted); font-size: 13px; text-decoration: none; }
+.back:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="back" href="index.html">&larr; All upcoming events</a>
+    <div class="kicker">Fight predictions</div>
+    <h1>UFC 332: Silva vs Wang</h1>
+    <div class="meta">
+      <span>Date <b>Saturday 03 October 2026</b></span>
+      <span>Venue <b>Delta Center, Salt Lake City, UT, United States</b></span>
+      <span>Model <b>model_2026-09-23</b> (lightgbm, data to 2026-09-19)</span>
+      <span>Generated <b>2026-09-24T09:54:17+00:00</b></span>
+      <span>13 bouts</span>
+    </div>
+  </header>
+  <main class="grid">
+<article class="bout">
+  <div class="bout-head"><span class="order">#1 · Main event</span><span>Women&#x27;s Flyweight · 5 rds</span></div>
+  <div class="fighter f1 winner"><span class="name">Natalia Silva</span><span class="badge pick">Pick 65%</span><span class="prob">65.3%</span></div>
+  
+  <div class="bar" role="img" aria-label="Natalia Silva 65.3%, Wang Cong 34.7%"><span class="seg f1" style="width:65.3%"></span><span class="seg f2" style="width:34.7%"></span></div>
+  <div class="fighter f2"><span class="name">Wang Cong</span><span class="prob">34.7%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Natalia Silva</h3><ul><li class="tag" title="0.29 log-odds">Age<span class="v">29.7 vs 34.4</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.20 log-odds">Streak<span class="v">+8 vs +4</span><span class="s" style="width:72%"></span></li><li class="tag" title="0.14 log-odds">Win rate<span class="v">90% vs 75%</span><span class="s" style="width:49%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Wang Cong</h3><ul><li class="tag" title="0.08 log-odds">Striking accuracy<span class="v">45% vs 58%</span><span class="s" style="width:28%"></span></li><li class="tag" title="0.07 log-odds">Sig. strikes landed /15m<span class="v">72.1 vs 102.6</span><span class="s" style="width:26%"></span></li><li class="tag" title="0.05 log-odds">Sig. strikes landed /15m (last 3)<span class="v">77.7 vs 106.3</span><span class="s" style="width:16%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#2 · Bout 2</span><span>Bantamweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Deiveson Figueiredo</span><span class="prob">23.4%</span></div>
+  
+  <div class="bar" role="img" aria-label="Deiveson Figueiredo 23.4%, Payton Talbott 76.6%"><span class="seg f1" style="width:23.4%"></span><span class="seg f2" style="width:76.6%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Payton Talbott</span><span class="badge pick">Pick 77%</span><span class="prob">76.6%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Deiveson Figueiredo</h3><ul><li class="tag" title="0.04 log-odds">Takedowns /15m<span class="v">1.6 vs 1.0</span><span class="s" style="width:8%"></span></li><li class="tag" title="0.04 log-odds">Sig. strikes absorbed /15m (last 3)<span class="v">33.2 vs 49.3</span><span class="s" style="width:8%"></span></li><li class="tag" title="0.04 log-odds">Striking defense<span class="v">50% vs 45%</span><span class="s" style="width:8%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Payton Talbott</h3><ul><li class="tag" title="0.67 log-odds">Age<span class="v">38.8 vs 28.1</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.22 log-odds">Win rate<span class="v">62% vs 75%</span><span class="s" style="width:33%"></span></li><li class="tag" title="0.14 log-odds">Sig. strikes landed /15m (last 3)<span class="v">15.1 vs 80.7</span><span class="s" style="width:20%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#3 · Bout 3</span><span>Lightweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">King Green</span><span class="prob">40.8%</span></div>
+  
+  <div class="bar" role="img" aria-label="King Green 40.8%, Esteban Ribovics 59.2%"><span class="seg f1" style="width:40.8%"></span><span class="seg f2" style="width:59.2%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Esteban Ribovics</span><span class="badge pick">Pick 59%</span><span class="prob">59.2%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours King Green</h3><ul><li class="tag" title="0.09 log-odds">Sig. strikes absorbed /15m<span class="v">55.5 vs 85.8</span><span class="s" style="width:13%"></span></li><li class="tag" title="0.09 log-odds">Striking defense<span class="v">62% vs 54%</span><span class="s" style="width:13%"></span></li><li class="tag" title="0.09 log-odds">Striking accuracy<span class="v">54% vs 44%</span><span class="s" style="width:12%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Esteban Ribovics</h3><ul><li class="tag" title="0.71 log-odds">Age<span class="v">40.1 vs 30.4</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.06 log-odds">Takedown defense (last 3)<span class="v">0% vs 73%</span><span class="s" style="width:8%"></span></li><li class="tag" title="0.05 log-odds">Win rate<span class="v">55% vs 60%</span><span class="s" style="width:8%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#4 · Bout 4</span><span>Welterweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Roberto Soldic</span><span class="badge debut">UFC debut</span><span class="prob">39.6%</span></div>
+  
+  <div class="bar" role="img" aria-label="Roberto Soldic 39.6%, Khaos Williams 60.4%"><span class="seg f1" style="width:39.6%"></span><span class="seg f2" style="width:60.4%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Khaos Williams</span><span class="badge pick">Pick 60%</span><span class="prob">60.4%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Roberto Soldic</h3><ul><li class="tag" title="0.09 log-odds">Age<span class="v">31.7 vs 32.5</span><span class="s" style="width:34%"></span></li><li class="tag" title="0.06 log-odds">Sig. strikes absorbed /15m<span class="v">n/a vs 80.0</span><span class="s" style="width:25%"></span></li><li class="tag" title="0.04 log-odds">Takedown defense (last 3)<span class="v">n/a vs 37%</span><span class="s" style="width:15%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Khaos Williams</h3><ul><li class="tag" title="0.26 log-odds">Win rate<span class="v">50% vs 62%</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.14 log-odds">Stance matchup<span class="v">nan vs Orthodox</span><span class="s" style="width:56%"></span></li><li class="tag" title="0.07 log-odds">UFC wins<span class="v">0 vs 7</span><span class="s" style="width:28%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#5 · Bout 5</span><span>Middleweight · 3 rds</span></div>
+  <div class="fighter f1 winner"><span class="name">Ateba Gautier</span><span class="badge pick">Pick 77%</span><span class="prob">76.6%</span></div>
+  
+  <div class="bar" role="img" aria-label="Ateba Gautier 76.6%, Roman Kopylov 23.4%"><span class="seg f1" style="width:76.6%"></span><span class="seg f2" style="width:23.4%"></span></div>
+  <div class="fighter f2"><span class="name">Roman Kopylov</span><span class="prob">23.4%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Ateba Gautier</h3><ul><li class="tag" title="0.66 log-odds">Age<span class="v">24.5 vs 35.4</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.23 log-odds">Reach<span class="v">81&quot; vs 75&quot;</span><span class="s" style="width:35%"></span></li><li class="tag" title="0.20 log-odds">Win rate<span class="v">86% vs 57%</span><span class="s" style="width:31%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Roman Kopylov</h3><ul><li class="tag" title="0.07 log-odds">Striking accuracy<span class="v">38% vs 50%</span><span class="s" style="width:11%"></span></li><li class="tag" title="0.04 log-odds">Takedown accuracy<span class="v">100% vs 50%</span><span class="s" style="width:8%"></span></li><li class="tag" title="0.04 log-odds">UFC fights<span class="v">5 vs 12</span><span class="s" style="width:8%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#6 · Bout 6</span><span>Flyweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Imanol Rodriguez</span><span class="prob">47.4%</span></div>
+  
+  <div class="bar" role="img" aria-label="Imanol Rodriguez 47.4%, Alden Coria 52.6%"><span class="seg f1" style="width:47.4%"></span><span class="seg f2" style="width:52.6%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Alden Coria</span><span class="badge pick">Pick 53%</span><span class="prob">52.6%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Imanol Rodriguez</h3><ul><li class="tag" title="0.09 log-odds">Age<span class="v">26.9 vs 28.4</span><span class="s" style="width:67%"></span></li><li class="tag" title="0.07 log-odds">Striking accuracy<span class="v">55% vs 42%</span><span class="s" style="width:53%"></span></li><li class="tag" title="0.06 log-odds">Sig. strikes landed /15m (last 3)<span class="v">73.8 vs 60.7</span><span class="s" style="width:43%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Alden Coria</h3><ul><li class="tag" title="0.14 log-odds">Win rate<span class="v">67% vs 80%</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.13 log-odds">Striking defense<span class="v">58% vs 70%</span><span class="s" style="width:96%"></span></li><li class="tag" title="0.05 log-odds">Takedown defense (last 3)<span class="v">n/a vs 56%</span><span class="s" style="width:36%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#7 · Bout 7</span><span>Middleweight · 3 rds</span></div>
+  <div class="fighter f1 winner"><span class="name">Damian Pinas</span><span class="badge pick">Pick 65%</span><span class="prob">64.7%</span></div>
+  
+  <div class="bar" role="img" aria-label="Damian Pinas 64.7%, Andrey Pulyaev 35.3%"><span class="seg f1" style="width:64.7%"></span><span class="seg f2" style="width:35.3%"></span></div>
+  <div class="fighter f2"><span class="name">Andrey Pulyaev</span><span class="prob">35.3%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Damian Pinas</h3><ul><li class="tag" title="0.30 log-odds">Age<span class="v">24.6 vs 29.1</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.26 log-odds">Win rate<span class="v">75% vs 33%</span><span class="s" style="width:85%"></span></li><li class="tag" title="0.12 log-odds">Takedown defense<span class="v">86% vs 45%</span><span class="s" style="width:41%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Andrey Pulyaev</h3><ul><li class="tag" title="0.10 log-odds">Sig. strikes absorbed /15m<span class="v">82.9 vs 43.7</span><span class="s" style="width:34%"></span></li><li class="tag" title="0.10 log-odds">Striking defense (last 3)<span class="v">37% vs 67%</span><span class="s" style="width:32%"></span></li><li class="tag" title="0.09 log-odds">Striking defense<span class="v">37% vs 57%</span><span class="s" style="width:30%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#8 · Bout 8</span><span>Bantamweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Marcus McGhee</span><span class="prob">41.8%</span></div>
+  
+  <div class="bar" role="img" aria-label="Marcus McGhee 41.8%, Benardo Sopaj 58.2%"><span class="seg f1" style="width:41.8%"></span><span class="seg f2" style="width:58.2%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Benardo Sopaj</span><span class="badge pick">Pick 58%</span><span class="prob">58.2%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Marcus McGhee</h3><ul><li class="tag" title="0.22 log-odds">Win rate<span class="v">75% vs 60%</span><span class="s" style="width:35%"></span></li><li class="tag" title="0.07 log-odds">UFC wins<span class="v">5 vs 2</span><span class="s" style="width:11%"></span></li><li class="tag" title="0.06 log-odds">Takedown defense<span class="v">90% vs 77%</span><span class="s" style="width:9%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Benardo Sopaj</h3><ul><li class="tag" title="0.64 log-odds">Age<span class="v">36.4 vs 26.0</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.11 log-odds">Takedowns /15m<span class="v">0.2 vs 2.4</span><span class="s" style="width:17%"></span></li><li class="tag" title="0.08 log-odds">Striking accuracy<span class="v">44% vs 58%</span><span class="s" style="width:12%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#9 · Bout 9</span><span>Heavyweight · 3 rds</span></div>
+  <div class="fighter f1 winner"><span class="name">Anthony Wint</span><span class="badge pick">Pick 73%</span><span class="prob">73.2%</span></div>
+  
+  <div class="bar" role="img" aria-label="Anthony Wint 73.2%, Lucas Armand 26.8%"><span class="seg f1" style="width:73.2%"></span><span class="seg f2" style="width:26.8%"></span></div>
+  <div class="fighter f2"><span class="name">Lucas Armand</span><span class="badge debut">UFC debut</span><span class="prob">26.8%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Anthony Wint</h3><ul><li class="tag" title="0.28 log-odds">Win rate<span class="v">67% vs 50%</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.21 log-odds">Sig. strikes absorbed /15m<span class="v">3.3 vs n/a</span><span class="s" style="width:75%"></span></li><li class="tag" title="0.17 log-odds">Striking defense<span class="v">75% vs n/a</span><span class="s" style="width:61%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Lucas Armand</h3><ul><li class="tag" title="0.04 log-odds">Sig. strikes landed /15m (last 3)<span class="v">16.7 vs n/a</span><span class="s" style="width:16%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#10 · Bout 10</span><span>Heavyweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Johnny Walker</span><span class="prob">42.1%</span></div>
+  
+  <div class="bar" role="img" aria-label="Johnny Walker 42.1%, Mick Parkin 57.9%"><span class="seg f1" style="width:42.1%"></span><span class="seg f2" style="width:57.9%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Mick Parkin</span><span class="badge pick">Pick 58%</span><span class="prob">57.9%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Johnny Walker</h3><ul><li class="tag" title="0.18 log-odds">Layoff (days)<span class="v">175 vs 560</span><span class="s" style="width:59%"></span></li><li class="tag" title="0.12 log-odds">Takedown accuracy (last 3)<span class="v">0% vs 100%</span><span class="s" style="width:39%"></span></li><li class="tag" title="0.07 log-odds">UFC wins<span class="v">8 vs 4</span><span class="s" style="width:22%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Mick Parkin</h3><ul><li class="tag" title="0.31 log-odds">Age<span class="v">34.5 vs 31.0</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.25 log-odds">Win rate<span class="v">50% vs 71%</span><span class="s" style="width:82%"></span></li><li class="tag" title="0.11 log-odds">Striking defense<span class="v">49% vs 60%</span><span class="s" style="width:35%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#11 · Bout 11</span><span>Lightweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Rafael Dos Anjos</span><span class="prob">41.4%</span></div>
+  
+  <div class="bar" role="img" aria-label="Rafael Dos Anjos 41.4%, Alexander Hernandez 58.6%"><span class="seg f1" style="width:41.4%"></span><span class="seg f2" style="width:58.6%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Alexander Hernandez</span><span class="badge pick">Pick 59%</span><span class="prob">58.6%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Rafael Dos Anjos</h3><ul><li class="tag" title="0.11 log-odds">Sig. strikes absorbed /15m<span class="v">48.5 vs 66.8</span><span class="s" style="width:23%"></span></li><li class="tag" title="0.10 log-odds">Stance matchup<span class="v">Southpaw vs Orthodox</span><span class="s" style="width:20%"></span></li><li class="tag" title="0.06 log-odds">Takedowns /15m<span class="v">1.9 vs 1.0</span><span class="s" style="width:13%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Alexander Hernandez</h3><ul><li class="tag" title="0.47 log-odds">Age<span class="v">41.9 vs 34.0</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.19 log-odds">Layoff (days)<span class="v">707 vs 161</span><span class="s" style="width:40%"></span></li><li class="tag" title="0.05 log-odds">Sig. strikes landed /15m (last 3)<span class="v">38.3 vs 50.6</span><span class="s" style="width:11%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#12 · Bout 12</span><span>Middleweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Marvin Vettori</span><span class="prob">31.4%</span></div>
+  
+  <div class="bar" role="img" aria-label="Marvin Vettori 31.4%, Ismail Naurdiev 68.6%"><span class="seg f1" style="width:31.4%"></span><span class="seg f2" style="width:68.6%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Ismail Naurdiev</span><span class="badge pick">Pick 69%</span><span class="prob">68.6%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Marvin Vettori</h3><ul><li class="tag" title="0.07 log-odds">UFC wins<span class="v">9 vs 4</span><span class="s" style="width:27%"></span></li><li class="tag" title="0.07 log-odds">Stance matchup<span class="v">Southpaw vs Orthodox</span><span class="s" style="width:27%"></span></li><li class="tag" title="0.03 log-odds">Control time /15m (last 3)<span class="v">40s vs 209s</span><span class="s" style="width:10%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Ismail Naurdiev</h3><ul><li class="tag" title="0.27 log-odds">Sig. strikes absorbed /15m<span class="v">68.3 vs 26.2</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.26 log-odds">Age<span class="v">33.0 vs 30.1</span><span class="s" style="width:96%"></span></li><li class="tag" title="0.12 log-odds">Striking defense<span class="v">56% vs 65%</span><span class="s" style="width:45%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#13 · Bout 13</span><span>Welterweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Court McGee</span><span class="prob">43.1%</span></div>
+  
+  <div class="bar" role="img" aria-label="Court McGee 43.1%, Eric Nolan 56.9%"><span class="seg f1" style="width:43.1%"></span><span class="seg f2" style="width:56.9%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Eric Nolan</span><span class="badge pick">Pick 57%</span><span class="prob">56.9%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Court McGee</h3><ul><li class="tag" title="0.23 log-odds">Win rate<span class="v">46% vs 25%</span><span class="s" style="width:32%"></span></li><li class="tag" title="0.12 log-odds">Takedowns /15m<span class="v">1.8 vs 0.0</span><span class="s" style="width:17%"></span></li><li class="tag" title="0.11 log-odds">Striking defense<span class="v">61% vs 45%</span><span class="s" style="width:16%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Eric Nolan</h3><ul><li class="tag" title="0.70 log-odds">Age<span class="v">41.8 vs 29.1</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.20 log-odds">Layoff (days)<span class="v">476 vs 98</span><span class="s" style="width:28%"></span></li><li class="tag" title="0.06 log-odds">Sig. strikes absorbed /15m<span class="v">54.8 vs 38.8</span><span class="s" style="width:8%"></span></li></ul></div>
+  </div>
+</article>
+  </main>
+  <footer>
+    Probabilities average both fighter orders, so they always sum to 100%. Key factors are the
+    model's feature contributions (in log-odds, combined over both orders): each tag shows the
+    values for the fighter on the left vs the right, and the bar shows its size relative to the
+    strongest factor in that bout. Factors explain this model's estimate, not what will happen
+    in the fight. On held-out test fights this model picked the winner 64% of the time.
+  </footer>
+</div>
+</body>
+</html>

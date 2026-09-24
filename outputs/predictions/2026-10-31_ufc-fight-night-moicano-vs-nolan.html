@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UFC Fight Night: Moicano vs Nolan predictions</title>
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --panel-2: #1c232d; --line: #2a3340;
+  --text: #e6edf3; --muted: #8b98a8; --f1: #e5534b; --f2: #4493f8;
+  --pick: #f2c14e; --debut: #b083f0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 16px 40px; }
+header.top { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+.kicker { color: var(--muted); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+h1 { font-size: clamp(22px, 4vw, 32px); margin: 6px 0 8px; line-height: 1.15; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 13px; }
+.meta b { color: var(--text); font-weight: 600; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); }
+.bout { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+  display: flex; flex-direction: column; gap: 12px; }
+.bout-head { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px;
+  text-transform: uppercase; letter-spacing: .08em; }
+.bout-head .order { color: var(--text); font-weight: 700; }
+.fighter { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  background: var(--panel-2); border-left: 4px solid transparent; }
+.fighter.f1 { border-left-color: var(--f1); }
+.fighter.f2 { border-left-color: var(--f2); }
+.fighter.winner { outline: 1px solid var(--pick); }
+.fighter .name { font-weight: 650; font-size: 16px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fighter .prob { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 17px; }
+.fighter.f1 .prob { color: var(--f1); }
+.fighter.f2 .prob { color: var(--f2); }
+.badge { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px;
+  padding: 2px 8px; white-space: nowrap; }
+.badge.pick { background: var(--pick); color: #1b1300; }
+.badge.debut { border: 1px solid var(--debut); color: var(--debut); }
+.note { color: var(--muted); font-size: 12px; margin: -6px 0 0 14px; }
+.bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--line); }
+.bar .seg.f1 { background: var(--f1); }
+.bar .seg.f2 { background: var(--f2); }
+.drivers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.drivers h3 { margin: 0 0 6px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
+  font-weight: 600; }
+.drivers ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tag { background: var(--panel-2); border-radius: 6px; padding: 6px 8px; font-size: 13px; }
+.tag .v { display: block; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tag .s { display: block; height: 3px; border-radius: 2px; margin-top: 5px; }
+.col.f1 .tag .s { background: var(--f1); }
+.col.f2 .tag .s { background: var(--f2); }
+.none { color: var(--muted); font-size: 13px; }
+footer { margin-top: 26px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
+@media (max-width: 420px) { .drivers { grid-template-columns: 1fr; } }
+a { color: inherit; }
+.back { display: inline-block; margin-bottom: 10px; color: var(--muted); font-size: 13px; text-decoration: none; }
+.back:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="back" href="index.html">&larr; All upcoming events</a>
+    <div class="kicker">Fight predictions</div>
+    <h1>UFC Fight Night: Moicano vs Nolan</h1>
+    <div class="meta">
+      <span>Date <b>Saturday 31 October 2026</b></span>
+      <span>Venue <b>Meta APEX, Las Vegas, NV, United States</b></span>
+      <span>Model <b>model_2026-09-23</b> (lightgbm, data to 2026-09-19)</span>
+      <span>Generated <b>2026-09-24T09:54:20+00:00</b></span>
+      <span>3 bouts</span>
+    </div>
+  </header>
+  <main class="grid">
+<article class="bout">
+  <div class="bout-head"><span class="order">#1 · Main event</span><span>Lightweight · 5 rds</span></div>
+  <div class="fighter f1"><span class="name">Renato Moicano</span><span class="prob">28.6%</span></div>
+  
+  <div class="bar" role="img" aria-label="Renato Moicano 28.6%, Tom Nolan 71.4%"><span class="seg f1" style="width:28.6%"></span><span class="seg f2" style="width:71.4%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Tom Nolan</span><span class="badge pick">Pick 71%</span><span class="prob">71.4%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Renato Moicano</h3><ul><li class="tag" title="0.14 log-odds">Striking defense<span class="v">60% vs 48%</span><span class="s" style="width:20%"></span></li><li class="tag" title="0.05 log-odds">UFC wins<span class="v">13 vs 5</span><span class="s" style="width:8%"></span></li><li class="tag" title="0.05 log-odds">Striking accuracy<span class="v">49% vs 45%</span><span class="s" style="width:8%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Tom Nolan</h3><ul><li class="tag" title="0.70 log-odds">Age<span class="v">37.4 vs 26.6</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.22 log-odds">Win rate<span class="v">64% vs 75%</span><span class="s" style="width:31%"></span></li><li class="tag" title="0.09 log-odds">Stance matchup<span class="v">Orthodox vs Southpaw</span><span class="s" style="width:13%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#2 · Bout 2</span><span>Women&#x27;s Flyweight · 3 rds</span></div>
+  <div class="fighter f1 winner"><span class="name">Lucia Szabova</span><span class="badge debut">UFC debut</span><span class="badge pick">Pick 56%</span><span class="prob">56.2%</span></div>
+  
+  <div class="bar" role="img" aria-label="Lucia Szabova 56.2%, Tainara Lisboa 43.8%"><span class="seg f1" style="width:56.2%"></span><span class="seg f2" style="width:43.8%"></span></div>
+  <div class="fighter f2"><span class="name">Tainara Lisboa</span><span class="prob">43.8%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Lucia Szabova</h3><ul><li class="tag" title="0.48 log-odds">Age<span class="v">28.9 vs 35.7</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.03 log-odds">Sig. strikes landed /15m (last 3)<span class="v">n/a vs 25.1</span><span class="s" style="width:8%"></span></li><li class="tag" title="0.02 log-odds">Striking defense (last 3)<span class="v">n/a vs 43%</span><span class="s" style="width:8%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Tainara Lisboa</h3><ul><li class="tag" title="0.14 log-odds">Stance matchup<span class="v">nan vs Orthodox</span><span class="s" style="width:30%"></span></li><li class="tag" title="0.04 log-odds">Sig. strikes absorbed /15m (last 3)<span class="v">n/a vs 49.0</span><span class="s" style="width:9%"></span></li><li class="tag" title="0.04 log-odds">Takedowns /15m<span class="v">n/a vs 1.7</span><span class="s" style="width:8%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#3 · Bout 3</span><span>Middleweight · 3 rds</span></div>
+  <div class="fighter f1 winner"><span class="name">Nick Klein</span><span class="badge pick">Pick 56%</span><span class="prob">56.2%</span></div>
+  
+  <div class="bar" role="img" aria-label="Nick Klein 56.2%, Joseph Kropschot 43.8%"><span class="seg f1" style="width:56.2%"></span><span class="seg f2" style="width:43.8%"></span></div>
+  <div class="fighter f2"><span class="name">Joseph Kropschot</span><span class="badge debut">UFC debut</span><span class="prob">43.8%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Nick Klein</h3><ul><li class="tag" title="0.16 log-odds">Stance matchup<span class="v">Orthodox vs nan</span><span class="s" style="width:55%"></span></li><li class="tag" title="0.12 log-odds">Takedowns /15m<span class="v">5.0 vs n/a</span><span class="s" style="width:41%"></span></li><li class="tag" title="0.10 log-odds">Age<span class="v">31.1 vs 31.4</span><span class="s" style="width:34%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Joseph Kropschot</h3><ul><li class="tag" title="0.29 log-odds">Win rate<span class="v">25% vs 50%</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.07 log-odds">Layoff (days)<span class="v">455 vs n/a</span><span class="s" style="width:23%"></span></li><li class="tag" title="0.06 log-odds">Striking defense<span class="v">39% vs n/a</span><span class="s" style="width:22%"></span></li></ul></div>
+  </div>
+</article>
+  </main>
+  <footer>
+    Probabilities average both fighter orders, so they always sum to 100%. Key factors are the
+    model's feature contributions (in log-odds, combined over both orders): each tag shows the
+    values for the fighter on the left vs the right, and the bar shows its size relative to the
+    strongest factor in that bout. Factors explain this model's estimate, not what will happen
+    in the fight. On held-out test fights this model picked the winner 64% of the time.
+  </footer>
+</div>
+</body>
+</html>

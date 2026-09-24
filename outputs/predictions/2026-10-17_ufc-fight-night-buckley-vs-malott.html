@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UFC Fight Night: Buckley vs Malott predictions</title>
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --panel-2: #1c232d; --line: #2a3340;
+  --text: #e6edf3; --muted: #8b98a8; --f1: #e5534b; --f2: #4493f8;
+  --pick: #f2c14e; --debut: #b083f0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 16px 40px; }
+header.top { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+.kicker { color: var(--muted); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+h1 { font-size: clamp(22px, 4vw, 32px); margin: 6px 0 8px; line-height: 1.15; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 13px; }
+.meta b { color: var(--text); font-weight: 600; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); }
+.bout { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+  display: flex; flex-direction: column; gap: 12px; }
+.bout-head { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px;
+  text-transform: uppercase; letter-spacing: .08em; }
+.bout-head .order { color: var(--text); font-weight: 700; }
+.fighter { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  background: var(--panel-2); border-left: 4px solid transparent; }
+.fighter.f1 { border-left-color: var(--f1); }
+.fighter.f2 { border-left-color: var(--f2); }
+.fighter.winner { outline: 1px solid var(--pick); }
+.fighter .name { font-weight: 650; font-size: 16px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fighter .prob { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 17px; }
+.fighter.f1 .prob { color: var(--f1); }
+.fighter.f2 .prob { color: var(--f2); }
+.badge { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px;
+  padding: 2px 8px; white-space: nowrap; }
+.badge.pick { background: var(--pick); color: #1b1300; }
+.badge.debut { border: 1px solid var(--debut); color: var(--debut); }
+.note { color: var(--muted); font-size: 12px; margin: -6px 0 0 14px; }
+.bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--line); }
+.bar .seg.f1 { background: var(--f1); }
+.bar .seg.f2 { background: var(--f2); }
+.drivers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.drivers h3 { margin: 0 0 6px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
+  font-weight: 600; }
+.drivers ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tag { background: var(--panel-2); border-radius: 6px; padding: 6px 8px; font-size: 13px; }
+.tag .v { display: block; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tag .s { display: block; height: 3px; border-radius: 2px; margin-top: 5px; }
+.col.f1 .tag .s { background: var(--f1); }
+.col.f2 .tag .s { background: var(--f2); }
+.none { color: var(--muted); font-size: 13px; }
+footer { margin-top: 26px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
+@media (max-width: 420px) { .drivers { grid-template-columns: 1fr; } }
+a { color: inherit; }
+.back { display: inline-block; margin-bottom: 10px; color: var(--muted); font-size: 13px; text-decoration: none; }
+.back:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="back" href="index.html">&larr; All upcoming events</a>
+    <div class="kicker">Fight predictions</div>
+    <h1>UFC Fight Night: Buckley vs Malott</h1>
+    <div class="meta">
+      <span>Date <b>Saturday 17 October 2026</b></span>
+      <span>Venue <b>Rogers Place, Edmonton, AB, Canada</b></span>
+      <span>Model <b>model_2026-09-23</b> (lightgbm, data to 2026-09-19)</span>
+      <span>Generated <b>2026-09-24T09:54:18+00:00</b></span>
+      <span>12 bouts</span>
+    </div>
+  </header>
+  <main class="grid">
+<article class="bout">
+  <div class="bout-head"><span class="order">#1 · Main event</span><span>Welterweight · 5 rds</span></div>
+  <div class="fighter f1"><span class="name">Joaquin Buckley</span><span class="prob">46.9%</span></div>
+  
+  <div class="bar" role="img" aria-label="Joaquin Buckley 46.9%, Mike Malott 53.1%"><span class="seg f1" style="width:46.9%"></span><span class="seg f2" style="width:53.1%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Mike Malott</span><span class="badge pick">Pick 53%</span><span class="prob">53.1%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Joaquin Buckley</h3><ul><li class="tag" title="0.26 log-odds">Age<span class="v">32.5 vs 34.9</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.08 log-odds">UFC wins<span class="v">11 vs 7</span><span class="s" style="width:29%"></span></li><li class="tag" title="0.07 log-odds">Stance matchup<span class="v">Southpaw vs Orthodox</span><span class="s" style="width:26%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Mike Malott</h3><ul><li class="tag" title="0.21 log-odds">Win rate<span class="v">63% vs 80%</span><span class="s" style="width:81%"></span></li><li class="tag" title="0.10 log-odds">Striking accuracy<span class="v">36% vs 52%</span><span class="s" style="width:39%"></span></li><li class="tag" title="0.08 log-odds">Sig. strikes landed /15m (last 3)<span class="v">34.0 vs 64.9</span><span class="s" style="width:31%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#2 · Bout 2</span><span>Women&#x27;s Flyweight · 3 rds</span></div>
+  <div class="fighter f1 winner"><span class="name">Erin Blanchfield</span><span class="badge pick">Pick 74%</span><span class="prob">73.6%</span></div>
+  
+  <div class="bar" role="img" aria-label="Erin Blanchfield 73.6%, Jasmine Jasudavicius 26.4%"><span class="seg f1" style="width:73.6%"></span><span class="seg f2" style="width:26.4%"></span></div>
+  <div class="fighter f2"><span class="name">Jasmine Jasudavicius</span><span class="prob">26.4%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Erin Blanchfield</h3><ul><li class="tag" title="0.66 log-odds">Age<span class="v">27.5 vs 37.6</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.18 log-odds">Win rate<span class="v">82% vs 71%</span><span class="s" style="width:28%"></span></li><li class="tag" title="0.11 log-odds">Sig. strikes landed /15m (last 3)<span class="v">73.3 vs 24.6</span><span class="s" style="width:16%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Jasmine Jasudavicius</h3><ul><li class="tag" title="0.07 log-odds">Sig. strikes absorbed /15m (last 3)<span class="v">78.3 vs 27.8</span><span class="s" style="width:10%"></span></li><li class="tag" title="0.05 log-odds">Takedowns /15m (last 3)<span class="v">1.0 vs 3.2</span><span class="s" style="width:8%"></span></li><li class="tag" title="0.04 log-odds">Layoff (days)<span class="v">336 vs 182</span><span class="s" style="width:8%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#3 · Bout 3</span><span>Middleweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Marc-Andre Barriault</span><span class="prob">31.4%</span></div>
+  
+  <div class="bar" role="img" aria-label="Marc-Andre Barriault 31.4%, Kyle Daukaus 68.6%"><span class="seg f1" style="width:31.4%"></span><span class="seg f2" style="width:68.6%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Kyle Daukaus</span><span class="badge pick">Pick 69%</span><span class="prob">68.6%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Marc-Andre Barriault</h3><ul><li class="tag" title="0.06 log-odds">Striking defense<span class="v">49% vs 42%</span><span class="s" style="width:20%"></span></li><li class="tag" title="0.06 log-odds">Takedown defense (last 3)<span class="v">80% vs 0%</span><span class="s" style="width:19%"></span></li><li class="tag" title="0.05 log-odds">Sig. strikes landed /15m (last 3)<span class="v">62.0 vs 36.8</span><span class="s" style="width:15%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Kyle Daukaus</h3><ul><li class="tag" title="0.32 log-odds">Age<span class="v">36.7 vs 33.6</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.15 log-odds">Sig. strikes absorbed /15m (last 3)<span class="v">114.0 vs 44.1</span><span class="s" style="width:48%"></span></li><li class="tag" title="0.15 log-odds">Sig. strikes absorbed /15m<span class="v">89.1 vs 48.4</span><span class="s" style="width:47%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#4 · Bout 4</span><span>Bantamweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Louis Jourdain</span><span class="badge debut">UFC debut</span><span class="prob">45.1%</span></div>
+  
+  <div class="bar" role="img" aria-label="Louis Jourdain 45.1%, Timmy Cuamba 54.9%"><span class="seg f1" style="width:45.1%"></span><span class="seg f2" style="width:54.9%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Timmy Cuamba</span><span class="badge pick">Pick 55%</span><span class="prob">54.9%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Louis Jourdain</h3><ul><li class="tag" title="0.19 log-odds">Win rate<span class="v">50% vs 43%</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.02 log-odds">Striking defense (last 3)<span class="v">n/a vs 42%</span><span class="s" style="width:12%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Timmy Cuamba</h3><ul><li class="tag" title="0.11 log-odds">Age<span class="v">29.6 vs 27.7</span><span class="s" style="width:58%"></span></li><li class="tag" title="0.05 log-odds">Layoff (days)<span class="v">n/a vs 154</span><span class="s" style="width:27%"></span></li><li class="tag" title="0.04 log-odds">Sig. strikes absorbed /15m (last 3)<span class="v">n/a vs 41.6</span><span class="s" style="width:21%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#5 · Bout 5</span><span>Lightweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Mandel Nallo</span><span class="prob">48.7%</span></div>
+  
+  <div class="bar" role="img" aria-label="Mandel Nallo 48.7%, Nate Landwehr 51.3%"><span class="seg f1" style="width:48.7%"></span><span class="seg f2" style="width:51.3%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Nate Landwehr</span><span class="badge pick">Pick 51%</span><span class="prob">51.3%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Mandel Nallo</h3><ul><li class="tag" title="0.20 log-odds">Age<span class="v">37.2 vs 38.4</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.09 log-odds">Striking accuracy<span class="v">52% vs 46%</span><span class="s" style="width:46%"></span></li><li class="tag" title="0.05 log-odds">Sig. strikes landed /15m<span class="v">115.2 vs 83.3</span><span class="s" style="width:23%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Nate Landwehr</h3><ul><li class="tag" title="0.18 log-odds">Win rate<span class="v">33% vs 46%</span><span class="s" style="width:91%"></span></li><li class="tag" title="0.11 log-odds">Striking defense<span class="v">32% vs 51%</span><span class="s" style="width:57%"></span></li><li class="tag" title="0.06 log-odds">Knockdowns /15m<span class="v">7.2 vs 0.1</span><span class="s" style="width:33%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#6 · Bout 6</span><span>Heavyweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Tanner Boser</span><span class="prob">39.4%</span></div>
+  
+  <div class="bar" role="img" aria-label="Tanner Boser 39.4%, Jhonata Diniz 60.6%"><span class="seg f1" style="width:39.4%"></span><span class="seg f2" style="width:60.6%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Jhonata Diniz</span><span class="badge pick">Pick 61%</span><span class="prob">60.6%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Tanner Boser</h3><ul><li class="tag" title="0.04 log-odds">Layoff (days)<span class="v">182 vs 371</span><span class="s" style="width:16%"></span></li><li class="tag" title="0.04 log-odds">UFC fights<span class="v">11 vs 5</span><span class="s" style="width:14%"></span></li><li class="tag" title="0.03 log-odds">Sig. strikes landed /15m<span class="v">72.2 vs 55.1</span><span class="s" style="width:12%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Jhonata Diniz</h3><ul><li class="tag" title="0.26 log-odds">Reach<span class="v">75&quot; vs 79&quot;</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.18 log-odds">Win rate<span class="v">46% vs 57%</span><span class="s" style="width:70%"></span></li><li class="tag" title="0.06 log-odds">Sig. strikes absorbed /15m (last 3)<span class="v">86.8 vs 64.1</span><span class="s" style="width:24%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#7 · Bout 7</span><span>Middleweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Julien Leblanc</span><span class="prob">32.5%</span></div>
+  
+  <div class="bar" role="img" aria-label="Julien Leblanc 32.5%, Gilbert Urbina 67.5%"><span class="seg f1" style="width:32.5%"></span><span class="seg f2" style="width:67.5%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Gilbert Urbina</span><span class="badge pick">Pick 68%</span><span class="prob">67.5%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Julien Leblanc</h3><ul><li class="tag" title="0.12 log-odds">Sig. strikes absorbed /15m<span class="v">44.4 vs 70.9</span><span class="s" style="width:35%"></span></li><li class="tag" title="0.06 log-odds">Sig. strikes absorbed /15m (last 3)<span class="v">44.4 vs 92.0</span><span class="s" style="width:19%"></span></li><li class="tag" title="0.05 log-odds">KO/TKO losses<span class="v">0 vs 2</span><span class="s" style="width:16%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Gilbert Urbina</h3><ul><li class="tag" title="0.34 log-odds">Age<span class="v">34.7 vs 30.5</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.20 log-odds">Stance matchup<span class="v">nan vs Orthodox</span><span class="s" style="width:60%"></span></li><li class="tag" title="0.18 log-odds">Win rate<span class="v">33% vs 43%</span><span class="s" style="width:52%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#8 · Bout 8</span><span>Heavyweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Javad Mahjoub</span><span class="badge debut">UFC debut</span><span class="prob">48.9%</span></div>
+  
+  <div class="bar" role="img" aria-label="Javad Mahjoub 48.9%, Louie Sutherland 51.1%"><span class="seg f1" style="width:48.9%"></span><span class="seg f2" style="width:51.1%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Louie Sutherland</span><span class="badge pick">Pick 51%</span><span class="prob">51.1%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Javad Mahjoub</h3><ul><li class="tag" title="0.27 log-odds">Win rate<span class="v">50% vs 33%</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.12 log-odds">Reach<span class="v">n/a vs 76&quot;</span><span class="s" style="width:43%"></span></li><li class="tag" title="0.06 log-odds">Striking defense<span class="v">n/a vs 35%</span><span class="s" style="width:21%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Louie Sutherland</h3><ul><li class="tag" title="0.15 log-odds">Sig. strikes absorbed /15m<span class="v">n/a vs 29.2</span><span class="s" style="width:54%"></span></li><li class="tag" title="0.14 log-odds">Age<span class="v">34.4 vs 32.7</span><span class="s" style="width:51%"></span></li><li class="tag" title="0.13 log-odds">Stance matchup<span class="v">nan vs Orthodox</span><span class="s" style="width:48%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#9 · Bout 9</span><span>Women&#x27;s Flyweight · 3 rds</span></div>
+  <div class="fighter f1 winner"><span class="name">Jamey-Lyn Horth</span><span class="badge pick">Pick 68%</span><span class="prob">67.8%</span></div>
+  
+  <div class="bar" role="img" aria-label="Jamey-Lyn Horth 67.8%, Katlyn Cerminara 32.2%"><span class="seg f1" style="width:67.8%"></span><span class="seg f2" style="width:32.2%"></span></div>
+  <div class="fighter f2"><span class="name">Katlyn Cerminara</span><span class="prob">32.2%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Jamey-Lyn Horth</h3><ul><li class="tag" title="0.20 log-odds">Sig. strikes absorbed /15m<span class="v">39.6 vs 67.2</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.18 log-odds">Age<span class="v">36.6 vs 37.8</span><span class="s" style="width:90%"></span></li><li class="tag" title="0.10 log-odds">Layoff (days)<span class="v">182 vs 952</span><span class="s" style="width:52%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Katlyn Cerminara</h3><ul><li class="tag" title="0.14 log-odds">Win rate<span class="v">56% vs 63%</span><span class="s" style="width:72%"></span></li><li class="tag" title="0.07 log-odds">UFC wins<span class="v">4 vs 11</span><span class="s" style="width:34%"></span></li><li class="tag" title="0.03 log-odds">Takedown accuracy (last 3)<span class="v">67% vs 12%</span><span class="s" style="width:17%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#10 · Bout 10</span><span>Bantamweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Chad Anheliger</span><span class="prob">43.2%</span></div>
+  
+  <div class="bar" role="img" aria-label="Chad Anheliger 43.2%, Steven Koslow 56.8%"><span class="seg f1" style="width:43.2%"></span><span class="seg f2" style="width:56.8%"></span></div>
+  <div class="fighter f2 winner"><span class="name">Steven Koslow</span><span class="badge pick">Pick 57%</span><span class="prob">56.8%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Chad Anheliger</h3><ul><li class="tag" title="0.24 log-odds">Win rate<span class="v">43% vs 33%</span><span class="s" style="width:35%"></span></li><li class="tag" title="0.16 log-odds">Sig. strikes landed /15m (last 3)<span class="v">40.8 vs 11.6</span><span class="s" style="width:24%"></span></li><li class="tag" title="0.11 log-odds">Striking defense<span class="v">54% vs 40%</span><span class="s" style="width:16%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Steven Koslow</h3><ul><li class="tag" title="0.68 log-odds">Age<span class="v">39.9 vs 29.7</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.13 log-odds">Layoff (days)<span class="v">714 vs 1407</span><span class="s" style="width:19%"></span></li><li class="tag" title="0.12 log-odds">Takedowns /15m<span class="v">0.8 vs 5.3</span><span class="s" style="width:18%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#11 · Bout 11</span><span>Women&#x27;s Bantamweight · 3 rds</span></div>
+  <div class="fighter f1 winner"><span class="name">Melissa Croden</span><span class="badge pick">Pick 73%</span><span class="prob">73.3%</span></div>
+  
+  <div class="bar" role="img" aria-label="Melissa Croden 73.3%, Chelsea Chandler 26.7%"><span class="seg f1" style="width:73.3%"></span><span class="seg f2" style="width:26.7%"></span></div>
+  <div class="fighter f2"><span class="name">Chelsea Chandler</span><span class="prob">26.7%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Melissa Croden</h3><ul><li class="tag" title="0.18 log-odds">Sig. strikes absorbed /15m<span class="v">32.0 vs 64.1</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.18 log-odds">Win rate<span class="v">60% vs 50%</span><span class="s" style="width:99%"></span></li><li class="tag" title="0.16 log-odds">Striking defense<span class="v">59% vs 40%</span><span class="s" style="width:87%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours Chelsea Chandler</h3><ul><li class="tag" title="0.09 log-odds">Stance matchup<span class="v">nan vs Southpaw</span><span class="s" style="width:51%"></span></li><li class="tag" title="0.03 log-odds">UFC fights<span class="v">3 vs 6</span><span class="s" style="width:16%"></span></li></ul></div>
+  </div>
+</article>
+<article class="bout">
+  <div class="bout-head"><span class="order">#12 · Bout 12</span><span>Bantamweight · 3 rds</span></div>
+  <div class="fighter f1"><span class="name">Cody Chovancek</span><span class="badge debut">UFC debut</span><span class="prob">28.2%</span></div>
+  
+  <div class="bar" role="img" aria-label="Cody Chovancek 28.2%, SuYoung You 71.8%"><span class="seg f1" style="width:28.2%"></span><span class="seg f2" style="width:71.8%"></span></div>
+  <div class="fighter f2 winner"><span class="name">SuYoung You</span><span class="badge pick">Pick 72%</span><span class="prob">71.8%</span></div>
+  
+  <div class="drivers">
+    <div class="col f1"><h3>Favours Cody Chovancek</h3><ul><li class="tag" title="0.21 log-odds">Age<span class="v">28.2 vs 30.9</span><span class="s" style="width:77%"></span></li><li class="tag" title="0.03 log-odds">Stance matchup<span class="v">Switch vs Orthodox</span><span class="s" style="width:12%"></span></li></ul></div>
+    <div class="col f2"><h3>Favours SuYoung You</h3><ul><li class="tag" title="0.27 log-odds">Win rate<span class="v">50% vs 67%</span><span class="s" style="width:100%"></span></li><li class="tag" title="0.21 log-odds">Striking defense<span class="v">n/a vs 70%</span><span class="s" style="width:79%"></span></li><li class="tag" title="0.14 log-odds">Sig. strikes absorbed /15m<span class="v">n/a vs 32.0</span><span class="s" style="width:52%"></span></li></ul></div>
+  </div>
+</article>
+  </main>
+  <footer>
+    Probabilities average both fighter orders, so they always sum to 100%. Key factors are the
+    model's feature contributions (in log-odds, combined over both orders): each tag shows the
+    values for the fighter on the left vs the right, and the bar shows its size relative to the
+    strongest factor in that bout. Factors explain this model's estimate, not what will happen
+    in the fight. On held-out test fights this model picked the winner 64% of the time.
+  </footer>
+</div>
+</body>
+</html>

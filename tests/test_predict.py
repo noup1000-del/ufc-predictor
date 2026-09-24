@@ -134,6 +134,29 @@ def test_html_report_structure(tables, lgbm_artifact, tmp_path):
         assert external not in html   # fully self-contained
 
 
+def test_schedule_index_structure():
+    from src.report import render_index
+    meta = {"model_version": "model_x", "model_type": "lightgbm", "data_cutoff": "2030-01-01"}
+    head = {"fighter_1": "A <b>", "fighter_2": "O'Brien", "p_fighter_1": 0.62, "p_fighter_2": 0.38,
+            "predicted_winner": "A <b>", "confidence": 0.62, "weight_class": "Lightweight"}
+    entries = [
+        {"event_name": "UFC 999: Later", "event_date": "2030-02-01", "location": None, "bouts": 0,
+         "report": None, "headliner": None, "unmatched": 0},
+        {"event_name": "UFC Fight Night: A & B", "event_date": "2030-01-10", "location": "Vegas, NV",
+         "bouts": 12, "report": "2030-01-10_ufc-fight-night-a-b.html", "headliner": head, "unmatched": 2},
+    ]
+    html = render_index(entries, meta, generated="2030-01-01T00:00:00+00:00")
+    assert html.startswith("<!doctype html>") and html.rstrip().endswith("</html>")
+    assert html.index("A &amp; B") < html.index("UFC 999: Later")          # chronological
+    assert html.count('<li class="event') == 2 and html.count('class="label-next"') == 1
+    assert 'href="2030-01-10_ufc-fight-night-a-b.html"' in html
+    assert "62.0%" in html and "38.0%" in html and "Card not announced yet" in html
+    assert "2 fighter(s) not in UFC data" in html
+    assert "A &lt;b&gt;" in html and "O&#x27;Brien" in html                 # escaped
+    for external in ("http://", "https://", "<script", "<link", "@import", "url("):
+        assert external not in html
+
+
 def test_slugify():
     assert slugify("UFC Fight Night: Tsarukyan vs. Van") == "ufc-fight-night-tsarukyan-vs-van"
     assert slugify("Noche UFC: Silva vs. Delgado") == "noche-ufc-silva-vs-delgado"

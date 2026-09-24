@@ -5,9 +5,13 @@ Features come from `features.matchup_features` -- the same code path as training
 with history from all processed fights before the event date. Both orientations are
 scored with models/latest.pkl and combined with `features.symmetric_probability`.
 
+`run_predict_all` fetches the ufc.com schedule (src/upcoming.py), predicts every scheduled
+card in data/raw/cards/ and writes the overview page outputs/predictions/index.html.
+
 Usage:
-    python -m src.predict                     # manual card file, else ESPN
+    python -m src.predict                     # manual card file, else ufc.com, else ESPN
     python -m src.predict --card path.json    # a specific card file
+    python -m src.predict --all               # every scheduled card + index.html
 """
 from __future__ import annotations
 
@@ -25,9 +29,12 @@ import pandas as pd
 from src.clean import load_processed
 from src.config import load_config, resolve_path
 from src.features import build_history, matchup_features, swap_orientation, symmetric_probability
-from src.report import render_html
+from src.http import FetchError
+from src.matching import FighterMatcher
+from src.report import render_html, render_index
 from src.train import load_model
-from src.upcoming import Card, UpcomingCardError, get_upcoming_card
+from src.upcoming import (Card, UpcomingCardError, get_upcoming_card, load_aliases, load_scheduled_cards, match_card,
+                          slugify, update_schedule)
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +65,6 @@ DRIVER_LABELS = {
     "weight_class": ("Weight class", None), "stance": ("Stance matchup", None),
     "is_title_fight": ("Title fight", None), "scheduled_rounds": ("Scheduled rounds", None),
 }
-
-
-def slugify(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
 
 # --------------------------------------------------------------------------- explainability
@@ -215,27 +218,98 @@ def run_predict(card_path: Path | None = None) -> tuple[pd.DataFrame, Path]:
     logger.info("Model %s (%s), trained on data up to %s", meta["model_version"], meta["model_type"],
                 meta["data_cutoff"])
 
+    return _predict_and_write(card, tables, artifact, resolve_path(cfg["paths"]["predictions_dir"]))
+
+
+def _warn_matches(card: Card) -> None:
     unmatched = card.unmatched()
     if unmatched:
-        logger.warning("No fighter_id for %s: treated as UFC debut(s). If any of them has UFC fights, "
-                       "add fighter_1_id/fighter_2_id to the card file.", unmatched)
+        logger.warning("%s: no fighter_id for %s: treated as UFC debut(s). If any of them has UFC fights, "
+                       "add fighter_1_id/fighter_2_id to the card file.", card.event_name, unmatched)
     for b in card.bouts:
         for side in ("1", "2"):
             if getattr(b, f"fighter_{side}_match") == "fuzzy":
                 logger.warning("Fuzzy name match used for %r; check it", getattr(b, f"fighter_{side}"))
 
+
+def _predict_and_write(card: Card, tables: dict[str, pd.DataFrame], artifact: dict,
+                       out_dir: Path, index_link: bool = False) -> tuple[pd.DataFrame, Path]:
+    """Predict one matched card; write <date>_<slug>.csv/.html and print the console table."""
+    meta = artifact["metadata"]
+    _warn_matches(card)
     pred = predict_card(card, tables, artifact)
-    out_dir = resolve_path(cfg["paths"]["predictions_dir"])
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{card.event_date}_{slugify(card.event_name)}.csv"
     _write_atomic(path, pred[OUTPUT_COLUMNS + EXTRA_COLUMNS].to_csv(index=False))
     html_path = path.with_suffix(".html")
-    _write_atomic(html_path, render_html(pred, card, meta))
+    _write_atomic(html_path, render_html(pred, card, meta, index_link=index_link))
 
     print(f"\n{card.event_name} - {card.event_date}  (source: {card.source}, model: {meta['model_version']})\n")
     print(format_table(pred))
     print(f"\nSaved {path}\nSaved {html_path}\n")
     return pred, path
+
+
+def run_predict_all(fetch: bool = True) -> list[dict]:
+    """Refresh the ufc.com schedule, predict every scheduled card, write index.html.
+
+    If ufc.com refuses (403 / challenge), the card files already in data/raw/cards/ are used
+    and the failure is logged; with no card files at all this raises UpcomingCardError.
+    Returns one summary dict per scheduled event (the rows of index.html)."""
+    cfg = load_config()
+    if fetch:
+        try:
+            update_schedule()
+        except (FetchError, UpcomingCardError) as e:
+            logger.error("Schedule fetch from ufc.com failed (%s); using existing card files in %s",
+                         getattr(e, "reason", e), cfg["upcoming"]["cards_dir"])
+    scheduled = load_scheduled_cards()
+    if not scheduled:
+        raise UpcomingCardError(f"no upcoming card files in {cfg['upcoming']['cards_dir']}; fetch the "
+                                "schedule or add a card JSON (see tests/fixtures/upcoming_card.example.json)")
+
+    tables = load_processed()
+    fighters = tables["fighters"].astype({"fighter_id": str, "name": str})
+    matcher = FighterMatcher.from_fighters(fighters)
+    aliases = load_aliases(known_ids=set(fighters.fighter_id))
+    artifact = load_model()
+    meta = artifact["metadata"]
+    logger.info("Model %s (%s), trained on data up to %s; %d scheduled cards", meta["model_version"],
+                meta["model_type"], meta["data_cutoff"], len(scheduled))
+    out_dir = resolve_path(cfg["paths"]["predictions_dir"])
+
+    entries = []
+    for card_file, card in scheduled:
+        entry = {"event_name": card.event_name, "event_date": card.event_date, "location": card.location,
+                 "event_url": card.event_url, "card_file": card_file.name, "bouts": len(card.bouts),
+                 "report": None, "headliner": None, "unmatched": 0}
+        if card.bouts:
+            card = match_card(card, matcher, aliases)
+            pred, path = _predict_and_write(card, tables, artifact, out_dir, index_link=True)
+            main = pred.sort_values("bout_order").iloc[0]
+            entry.update(report=path.with_suffix(".html").name, unmatched=len(card.unmatched()),
+                         headliner={k: main[k] for k in ("fighter_1", "fighter_2", "p_fighter_1", "p_fighter_2",
+                                                         "predicted_winner", "confidence", "weight_class")})
+        else:
+            logger.info("%s (%s): no bouts announced yet; not predicted", card.event_name, card.event_date)
+        entries.append(entry)
+
+    index = out_dir / "index.html"
+    _write_atomic(index, render_index(entries, meta))
+    print(format_schedule(entries))
+    print(f"\nSaved {index}\n")
+    return entries
+
+
+def format_schedule(entries: list[dict]) -> str:
+    head = f"{'Date':<10}  {'Event':<42}  {'Bouts':>5}  Main event"
+    lines = [head, "-" * 110]
+    for e in entries:
+        h = e["headliner"]
+        main = (f"{h['fighter_1']} {h['p_fighter_1']:.0%} vs {h['fighter_2']} {h['p_fighter_2']:.0%}"
+                f"  -> {h['predicted_winner']}") if h else "no bouts announced yet"
+        lines.append(f"{e['event_date']:<10}  {e['event_name'][:42]:<42}  {e['bouts']:>5}  {main}")
+    return "\n".join(lines)
 
 
 def _write_atomic(path: Path, text: str) -> None:
@@ -247,10 +321,16 @@ def _write_atomic(path: Path, text: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--card", type=Path, help="card JSON file (default: config upcoming.manual_card_file)")
+    p.add_argument("--all", action="store_true", help="fetch the ufc.com schedule and predict every card")
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")  # non-UTF-8 console: don't crash on "ć"
     try:
-        run_predict(args.card)
+        if args.all:
+            run_predict_all()
+        else:
+            run_predict(args.card)
     except UpcomingCardError as e:
         logger.error("%s", e)
         return 1

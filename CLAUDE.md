@@ -29,13 +29,16 @@ ufc-predictor/
 ├── config.yaml             # settings: paths, rate limit, date cutoffs, model params
 ├── requirements.txt
 ├── ingest_overrides.csv    # committed manual fighter-ID fixes for name collisions (see ingest rules)
+├── upcoming_aliases.csv    # committed, verified card-name -> fighter_id fixes for upcoming cards
 ├── run_pipeline.py         # entry point, runs stages in order
 ├── data/
 │   ├── raw/
 │   │   ├── source/greco/<commit_sha>/   # downloaded Greco1899 CSVs, pinned by commit
 │   │   ├── source/manifest.json         # commit SHA + row counts of the last ingest
 │   │   ├── espn/           # cached ESPN scoreboard JSON
-│   │   ├── upcoming_card.json   # optional manual card override
+│   │   ├── html/ufc_com*/  # last fetched ufc.com schedule/event pages (debugging only)
+│   │   ├── cards/          # <event_date>_<event_slug>.json, one per scheduled card (ufc.com fetch)
+│   │   ├── upcoming_card.json   # next card: synced from ufc.com, or a hand-made override
 │   │   ├── ingest_dropped.csv   # fights the last ingest could not map, with reason
 │   │   ├── events.csv
 │   │   ├── fights.csv
@@ -45,7 +48,7 @@ ufc-predictor/
 │   └── features/           # one row per fight, model-ready
 ├── models/                 # trained model + metadata (date trained, metrics, feature list)
 ├── outputs/
-│   ├── predictions/        # <event_date>_<event_slug>.csv
+│   ├── predictions/        # <event_date>_<event_slug>.csv/.html + index.html (schedule overview)
 │   └── tracking/
 │       └── results_log.csv # every prediction + actual outcome once known
 ├── src/
@@ -54,7 +57,7 @@ ufc-predictor/
 │   ├── http.py             # shared session, rate limiting, retries, download cache
 │   ├── ingest.py           # Greco1899 archive -> raw schemas (the only place names are joined)
 │   ├── matching.py         # name normalisation + fighter-name -> fighter_id matching
-│   ├── upcoming.py         # upcoming card: manual JSON override, else ESPN API
+│   ├── upcoming.py         # upcoming cards: manual override, else ufc.com schedule, else ESPN API
 │   ├── clean.py
 │   ├── features.py
 │   ├── train.py
@@ -92,12 +95,13 @@ Known quirks (handled in `src/ingest.py`):
 - Exact duplicate stat rows exist; stat rows with an empty ROUND mean "no stats recorded".
 
 **Upcoming cards:** `src/upcoming.py` uses, in order:
-1. `data/raw/upcoming_card.json` if present and its date is today or later (manual override; format in `tests/fixtures/upcoming_card.example.json`; may set `fighter_1_id`/`fighter_2_id` directly).
-2. ESPN's public scoreboard API: `https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=<YYYYMMDD>-<YYYYMMDD>`. Non-UFC-card events (e.g. Dana White's Contender Series) are skipped. If ESPN refuses the request (e.g. 403), fail clearly and ask for the manual file; do not work around blocks.
+1. `data/raw/upcoming_card.json` if present, dated today or later, and hand-made (manual override; format in `tests/fixtures/upcoming_card.example.json`; may set `fighter_1_id`/`fighter_2_id` directly). A file written by the ufc.com sync (`"source": "ufc.com"`) is refreshed instead, and used as-is only if ufc.com cannot be reached.
+2. **ufc.com (official schedule, approved 2026-09-24):** `https://www.ufc.com/events` (the `upcoming` list only) and each `https://www.ufc.com/event/<slug>` page. Read only event name, date, venue and per bout the red/blue corner names (fighter_1 = red), weight class and title status; never odds, rankings or countries. Rounds are not on the page: 5 for bout 1 and title bouts, else 3. The date is the displayed US-Eastern day, with the year from the page's Unix timestamp. Sponsor prefixes are dropped from event names ("Polymarket UFC 334" → "UFC 334"). Non-UFC-card events (Road to UFC, Contender Series, TUF) are skipped. Each card is saved to `data/raw/cards/<event_date>_<event_slug>.json` (a changed headliner replaces the file for the same event URL; future ufc.com cards no longer on the schedule are removed; hand-made and past files are never touched), and the next card with bouts is synced to `upcoming_card.json` (a hand-made file there is first moved to `upcoming_card.manual-<UTC timestamp>.json`). Requests use the project User-Agent (never a browser UA) and honour ufc.com's robots.txt `crawl-delay: 15`. If ufc.com returns 403 or a challenge page, do not work around it: fall back to the existing card files / manual JSON and log the failure.
+3. ESPN's public scoreboard API: `https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=<YYYYMMDD>-<YYYYMMDD>`. Non-UFC-card events (e.g. Dana White's Contender Series) are skipped. If ESPN refuses the request (e.g. 403), fail clearly and ask for the manual file; do not work around blocks.
 
 ## Download & ingest rules
 
-- **Rate limit:** max 1 request per second, enforced in `src/http.py` for every request (GitHub, ESPN, anything).
+- **Rate limit:** max 1 request per second, enforced in `src/http.py` for every request (GitHub, ESPN, ufc.com, anything). Hosts with a robots.txt crawl-delay get a stricter per-host limit on top (`http.host_min_interval_sec`; `www.ufc.com: 15`).
 - Send a descriptive `User-Agent` (`UFCFightPredictor/0.1 (DataScienceResearch; non-commercial)`). Use timeouts (15s) and retry with exponential backoff (3 attempts).
 - **Pin and cache the source:** each run asks the GitHub API for the latest commit SHA of Greco1899 and downloads the CSVs for that SHA to `data/raw/source/greco/<sha>/` only if not already there. `--full` rebuilds from the cached source without re-downloading. Record SHA and row counts in `data/raw/source/manifest.json`.
 - **Incremental:** merge only rows whose keys are not already in the raw tables (events by `event_id`, fights by `fight_id`, stats by `(fight_id, fighter_id)`, fighters by `fighter_id`). Fighters, fights and stats are written before events.
@@ -111,7 +115,7 @@ Known quirks (handled in `src/ingest.py`):
 4. Otherwise the fight is dropped and listed in `ingest_dropped.csv` for a manual override. Never fuzzy-match historical names.
 Every stage after ingest joins on IDs only.
 
-For upcoming cards (ESPN names), `src/matching.py` may additionally use a fuzzy fallback: accept only if similarity ≥ 0.92 and ≥ 0.05 ahead of the runner-up. Unmatched names are reported in the prediction output, never silently guessed.
+For upcoming cards (ufc.com/ESPN names), `upcoming_aliases.csv` (`name, fighter_id, note`; hand-verified, e.g. "Tina Black" → Valesca Machado) is applied first (match method `alias`; entries with an unknown fighter_id are ignored with a warning), then `src/matching.py`, which may additionally use a fuzzy fallback: accept only if similarity ≥ 0.92 and ≥ 0.05 ahead of the runner-up. Unmatched names are reported in the prediction output, never silently guessed; add a verified alias instead.
 
 ## Data schemas
 
@@ -191,7 +195,8 @@ Implementation notes (src/features.py):
 
 ## Stage 5: predict.py
 
-- Get the next card from `src/upcoming.py` (manual `data/raw/upcoming_card.json` first, else ESPN).
+- Get the next card from `src/upcoming.py` (hand-made `data/raw/upcoming_card.json` first, else ufc.com, else ESPN).
+- **All scheduled cards** (`run_predict_all`, `python run_pipeline.py --predict-all`): refresh the ufc.com schedule (on failure log it and use the existing files), then predict every card file in `data/raw/cards/` dated today or later (cards without announced bouts are listed but not predicted), writing each card's CSV + HTML (with a link back to the index) and `outputs/predictions/index.html`: all upcoming events in date order with date, venue, bout count, unmatched-name count, the main event's probability bar and pick, and links to each card report. Same self-contained HTML rules as the card report.
 - Map fighter names to `fighter_id` with `src/matching.py`. Fighters not in `fighters.csv` are treated as debuts (`is_debut = 1`, physical stats NaN) and listed in the console output; unmatched names must be visible, never guessed.
 - Build features as of the event date using the same code path as training (reuse functions from `features.py`; no duplicated logic).
 - Output `outputs/predictions/<event_date>_<event_slug>.csv`: `event_date, weight_class, fighter_1, fighter_2, p_fighter_1, p_fighter_2, predicted_winner, confidence, model_version, predicted_at`, followed by `event_name, bout_order, fighter_1_id, fighter_2_id, fighter_1_match, fighter_2_match, fighter_1_debut, fighter_2_debut` (IDs so tracking joins on fighter_id; match method so fuzzy/unmatched names stay visible).
@@ -219,7 +224,7 @@ python run_pipeline.py --stage features   # run a single stage
 
 Log start/end and row counts for each stage. Exit with a non-zero code on failure so a scheduler can detect it.
 
-Also: `--backtest` (walk-forward backtest only), `--dry-run` (print the plan), `--card PATH` (card JSON for predict), `--force-train`, `--no-predict` (stop after train; for the post-event job).
+Also: `--predict-all` (fetch the ufc.com schedule and predict every scheduled card + `index.html`; no ingest/train), `--backtest` (walk-forward backtest only), `--dry-run` (print the plan), `--card PATH` (card JSON for predict), `--force-train`, `--no-predict` (stop after train; for the post-event job).
 
 Scheduling (weekly Monday results/tracking job + Wednesday prediction job, Windows Task Scheduler via `scripts/run_pipeline.bat`, cron, GitHub Actions): see `docs/scheduling.md`. The train stage in `--update` runs only if there is no model, the processed data is newer than the model's `data_cutoff`, or the feature list changed; `--full` and `--stage train` always train. The pipeline stops at the first failing stage (exit 1). Logs also go to `logs/pipeline.log` (git-ignored).
 
@@ -231,7 +236,8 @@ Scheduling (weekly Monday results/tracking job + Wednesday prediction job, Windo
 - Idempotency test: running the ingest's merge step twice doesn't add rows.
 - Ingest tests: outcome → winner mapping, round aggregation, renamed-event duplicates, same-name disambiguation, overrides.
 - Matching tests: normalisation, fuzzy thresholds, ambiguity handling.
-- Use saved fixtures in `tests/fixtures/` (excerpts of the Greco1899 CSVs, ESPN JSON), not live requests.
+- ufc.com schedule tests: events-list/event-page parsing, year from timestamp, card-file replacement and sync, aliases, per-host crawl delay.
+- Use saved fixtures in `tests/fixtures/` (excerpts of the Greco1899 CSVs, ESPN JSON, synthetic ufc.com HTML), not live requests.
 
 ## Build order
 
@@ -253,7 +259,7 @@ Note for Features: non-UFC records (PFL, ONE, KSW, Cage Warriors, …) are plann
 - Don't fill unknown values with made-up defaults (e.g. height = 70).
 - Don't use bare `except:` or swallow errors silently.
 - Don't use random train/test splits.
-- Don't fetch data from other sites (e.g. betting odds) unless asked. Approved sources: the Greco1899 GitHub repo (and GitHub API for its commit SHA) and the ESPN scoreboard API.
+- Don't fetch data from other sites (e.g. betting odds) unless asked. Approved sources: the Greco1899 GitHub repo (and GitHub API for its commit SHA), ufc.com event pages (`/events`, `/event/<slug>`) for scheduled cards, and the ESPN scoreboard API.
 - Don't bypass bot protection, CAPTCHAs or access blocks on any site.
 - Don't create features based on nationality or ethnicity.
 - Don't duplicate feature logic between training and prediction.

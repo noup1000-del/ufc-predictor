@@ -3,6 +3,7 @@
     python run_pipeline.py [--update]        ingest new -> clean -> features -> track -> train (if needed) -> predict
     python run_pipeline.py --full            rebuild from the cached source (no downloads), always retrain
     python run_pipeline.py --predict-only
+    python run_pipeline.py --predict-all     fetch the ufc.com schedule, predict every card, write index.html
     python run_pipeline.py --stage features  one stage (ingest|clean|features|track|train|predict|backtest)
     python run_pipeline.py --backtest        walk-forward backtest -> models/backtest_report.json
     python run_pipeline.py --dry-run         show the plan without running anything
@@ -117,6 +118,13 @@ def stage_train(ctx: Context) -> dict:
             "promoted": meta["promotion"]["promoted"]}
 
 
+def stage_predict_all(ctx: Context) -> dict:
+    from src import predict
+    entries = predict.run_predict_all()
+    return {"events": len(entries), "predicted": sum(1 for e in entries if e["headliner"]),
+            "bouts": sum(e["bouts"] for e in entries if e["headliner"])}
+
+
 def stage_backtest(ctx: Context) -> dict:
     from src import train
     report = train.run_backtest_cli(save=True)
@@ -134,7 +142,7 @@ def stage_predict(ctx: Context) -> dict:
 
 STAGE_FUNCS = {"ingest": stage_ingest, "clean": stage_clean, "features": stage_features,
                "track": stage_track, "train": stage_train, "predict": stage_predict,
-               "backtest": stage_backtest}  # backtest also runs inside train (promotion gate)
+               "backtest": stage_backtest, "predict_all": stage_predict_all}  # backtest also runs inside train (promotion gate)
 
 
 # --------------------------------------------------------------------------- orchestration
@@ -143,6 +151,8 @@ def plan(args: argparse.Namespace) -> tuple[list[str], Context]:
     ctx = Context(full=args.full, force_train=args.force_train or args.full, card=args.card)
     if args.predict_only:
         return ["predict"], ctx
+    if args.predict_all:
+        return ["predict_all"], ctx
     if args.backtest:
         return ["backtest"], ctx
     if args.stage:
@@ -178,6 +188,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     mode.add_argument("--update", action="store_true", help="default mode")
     mode.add_argument("--full", action="store_true")
     mode.add_argument("--predict-only", action="store_true")
+    mode.add_argument("--predict-all", action="store_true",
+                      help="fetch the ufc.com schedule and predict every scheduled card (+ index.html)")
     mode.add_argument("--backtest", action="store_true", help="walk-forward backtest only")
     mode.add_argument("--stage", choices=STAGES + ["backtest"])
     p.add_argument("--card", type=Path, help="card JSON for the predict stage")
@@ -189,6 +201,11 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 
 def setup_logging() -> None:
+    # A redirected Windows console is cp1252; fighter names like "Dvalishvili" are fine but
+    # "ć"/"ł" would crash print(). Output files are UTF-8 regardless.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
     log_dir = resolve_path("logs")
     log_dir.mkdir(exist_ok=True)
     fmt = "%(asctime)s %(levelname)s %(name)s: %(message)s"

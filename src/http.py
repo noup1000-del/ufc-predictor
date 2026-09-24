@@ -12,6 +12,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Callable
+from urllib.parse import urlsplit
 
 import requests
 
@@ -85,6 +86,7 @@ class HttpClient:
         session: requests.Session | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
+        host_intervals: dict[str, float] | None = None,
     ):
         self.cache_dir = Path(cache_dir)
         self.timeout = timeout
@@ -92,6 +94,9 @@ class HttpClient:
         self.backoff_base = backoff_base
         self._sleep = sleep
         self.limiter = RateLimiter(min_interval, clock=clock, sleep=sleep)
+        # Slower per-host limits on top of the global one (e.g. a site's robots.txt crawl-delay).
+        self.host_limiters = {host.lower(): RateLimiter(sec, clock=clock, sleep=sleep)
+                              for host, sec in (host_intervals or {}).items()}
         self.session = session or requests.Session()
         self.session.headers["User-Agent"] = user_agent
         self.stats = {"network": 0, "cache_hits": 0, "failures": 0}
@@ -134,7 +139,10 @@ class HttpClient:
 
     def _get(self, url: str) -> bytes:
         last_reason = "unknown"
+        host_limiter = self.host_limiters.get((urlsplit(url).hostname or "").lower())
         for attempt in range(1, self.max_attempts + 1):
+            if host_limiter is not None:
+                host_limiter.wait()
             self.limiter.wait()
             self.stats["network"] += 1
             retry_after: float | None = None
@@ -205,5 +213,6 @@ def get_client() -> HttpClient:
                 timeout=h["timeout_sec"],
                 max_attempts=h["max_attempts"],
                 backoff_base=h["backoff_base_sec"],
+                host_intervals=h.get("host_min_interval_sec"),
             )
         return _client

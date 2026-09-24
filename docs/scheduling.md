@@ -8,13 +8,16 @@ completed event within 1–3 days (commits land around 18:00 UTC). So there are 
 | Job | When | Command | What it does |
 |---|---|---|---|
 | Results & tracking | **Monday** morning | `run_pipeline.py --update --no-predict` | Imports Saturday's results, rebuilds clean and features, logs last week's predictions against the results, retrains (new data → new model) |
-| Predictions | **Wednesday** evening | `run_pipeline.py --update` | Same as above (picks up results the source added late, no-op otherwise), then predicts the card in `data/raw/upcoming_card.json` |
+| Predictions | **Wednesday** evening | `run_pipeline.py --update` | Same as above (picks up results the source added late, no-op otherwise), then predicts the next card (fetched from ufc.com) |
+| Schedule overview (optional) | after the Wednesday job | `run_pipeline.py --predict-all` | Re-fetches the ufc.com schedule and predicts every announced card, plus `outputs/predictions/index.html` (~2 min: ufc.com asks for 15 s between requests) |
 
-**Manual step each week (before Wednesday's job):** put the next card in
-`data/raw/upcoming_card.json` (format: `tests/fixtures/upcoming_card.example.json`). ESPN
-returns 403 from this machine, so there is no automatic card. If the file is missing or
-its date is in the past, the Wednesday job fails with exit code 1 and the message
-"Create data/raw/upcoming_card.json". The failure is your reminder.
+The next card comes from ufc.com/events and is synced to `data/raw/upcoming_card.json`, so
+there is no weekly manual step. To override it, write your own `upcoming_card.json`
+(format: `tests/fixtures/upcoming_card.example.json`); a hand-made file wins over ufc.com.
+If ufc.com refuses (403 / challenge page), the last synced card is used, then ESPN; if
+nothing works the job fails with exit code 1 and asks for the manual file. When the log
+says a fighter has no fighter_id but you know they have UFC fights (ufc.com spells some
+names differently from ufcstats), add a verified line to `upcoming_aliases.csv`.
 
 Every run appends to `logs/pipeline.log`. The exit code is 0 on success and 1 if any stage
 failed (the pipeline stops at that stage). A failed Monday run is harmless: the next run
