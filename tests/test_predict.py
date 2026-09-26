@@ -108,6 +108,13 @@ def test_combined_contributions_mirror_prediction_sign(tables, request, which):
     assert total[0] == pytest.approx(-total[1])  # swapping the fighters flips every driver
 
 
+def test_unknown_stance_shows_na_not_nan():
+    from src.predict import driver_values
+    row = pd.Series({"f1_stance": np.nan, "f2_stance": "Orthodox"})
+    assert driver_values("stance", row) == "n/a vs Orthodox"
+    assert driver_values("stance", pd.Series({"f1_stance": "Southpaw", "f2_stance": None})) == "Southpaw vs n/a"
+
+
 def test_key_factors_and_drivers(tables, lgbm_artifact):
     c = card("2030-01-01", [("A", "a", "B", "b", "Lightweight"), ("E", "e", "New Guy", None, "Welterweight")])
     pred = predict_card(c, tables, lgbm_artifact)

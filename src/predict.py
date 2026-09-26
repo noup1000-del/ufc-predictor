@@ -100,7 +100,9 @@ def _fmt(value, kind) -> str:
 def driver_values(group: str, row: pd.Series) -> str:
     """Human-readable values behind a driver, fighter_1 vs fighter_2 (raw, pre-imputation)."""
     if group == "stance":
-        return f"{row.get('f1_stance') or 'n/a'} vs {row.get('f2_stance') or 'n/a'}"
+        def stance(v):  # NaN is truthy, so `v or "n/a"` would print "nan"
+            return "n/a" if v is None or pd.isna(v) or v == "" else str(v)
+        return f"{stance(row.get('f1_stance'))} vs {stance(row.get('f2_stance'))}"
     if group in ("weight_class", "is_title_fight", "scheduled_rounds"):
         v = row.get(group)
         return "n/a" if pd.isna(v) else (str(v) if group == "weight_class" else f"{float(v):.0f}")
