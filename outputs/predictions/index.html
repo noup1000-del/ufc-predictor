@@ -95,12 +95,40 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
   background: var(--pick); border-radius: 999px; padding: 2px 8px; vertical-align: 5px; margin-left: 10px; }
 .empty { color: var(--muted); background: var(--panel); border: 1px dashed var(--line); border-radius: 12px;
   padding: 24px 16px; text-align: center; }
+.updates { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  margin: 0 0 24px; }
+.updates-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px;
+  margin-bottom: 8px; }
+.updates h2 { margin: 0; font-size: 16px; }
+.checked { color: var(--muted); font-size: 12px; }
+.checked b { color: var(--text); font-weight: 600; }
+.feed { list-style: none; margin: 0; padding: 0; }
+.feed-row { display: grid; grid-template-columns: 190px 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.feed-row:first-child { border-top: 0; }
+.feed-when { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.feed-event { font-weight: 650; font-size: 14px; text-decoration: none; }
+.feed-event:hover { text-decoration: underline; }
+.feed-none { color: var(--muted); font-size: 13px; margin: 0; }
+.chg-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.chg-list s { color: var(--muted); }
+.chg { display: inline-block; min-width: 92px; margin-right: 8px; padding: 1px 7px; border-radius: 999px; font-size: 10px;
+  font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-align: center; border: 1px solid; }
+.chg.in { color: var(--pick); border-color: var(--pick); }
+.chg.add { color: #3fb950; border-color: #3fb950; }
+.chg.out { color: var(--f1); border-color: var(--f1); }
+.panel-changes { margin-top: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 12px; }
+.panel-changes summary { cursor: pointer; font-size: 13px; font-weight: 650; color: var(--pick); }
+.panel-changes .feed { margin-top: 6px; }
+.upd-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--pick);
+  margin-left: 6px; vertical-align: 1px; }
 @media (max-width: 720px) {
   .picker { display: block; }
   .tabs { display: none; }
   .brand .kicker { display: none; }
   .brand-title { font-size: 15px; }
   .event-panel { scroll-margin-top: 70px; }
+  .feed-row { grid-template-columns: 1fr; gap: 2px; }
   html:not(.js) .picker { display: none; }
   html:not(.js) .tabs { display: flex; }
 }
@@ -113,19 +141,25 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
     <label class="picker"><span class="sr-only">Choose an event</span>
       <select id="event-select"><option value="ufc-fight-night-rosas-jr-vs-barcelos">Rosas Jr. vs Barcelos (Sep 26)</option><option value="ufc-332-silva-vs-wang">UFC 332 (Oct 3)</option><option value="ufc-fight-night-allen-vs-duncan">Allen vs Duncan (Oct 10)</option><option value="ufc-fight-night-buckley-vs-malott">Buckley vs Malott (Oct 17)</option><option value="ufc-333-volkanovski-vs-evloev">UFC 333 (Oct 24)</option><option value="ufc-fight-night-moicano-vs-nolan">Moicano vs Nolan (Oct 31)</option><option value="ufc-fight-night-bonfim-vs-brady">Bonfim vs Brady (Nov 7)</option><option value="ufc-334-gane-vs-hokit">UFC 334 (Nov 14)</option></select></label>
   </div>
-  <nav class="tabs" role="tablist" aria-label="Events"><a class="tab next" role="tab" id="tab-ufc-fight-night-rosas-jr-vs-barcelos" href="#ufc-fight-night-rosas-jr-vs-barcelos" data-target="ufc-fight-night-rosas-jr-vs-barcelos" aria-controls="ufc-fight-night-rosas-jr-vs-barcelos"><span class="tab-title">Rosas Jr. vs Barcelos <span class="date-badge">Sep 26</span></span><span class="tab-sub">Raul Rosas Jr. vs Raoni Barcelos</span></a><a class="tab" role="tab" id="tab-ufc-332-silva-vs-wang" href="#ufc-332-silva-vs-wang" data-target="ufc-332-silva-vs-wang" aria-controls="ufc-332-silva-vs-wang"><span class="tab-title">UFC 332 <span class="date-badge">Oct 3</span></span><span class="tab-sub">Natalia Silva vs Wang Cong</span></a><a class="tab" role="tab" id="tab-ufc-fight-night-allen-vs-duncan" href="#ufc-fight-night-allen-vs-duncan" data-target="ufc-fight-night-allen-vs-duncan" aria-controls="ufc-fight-night-allen-vs-duncan"><span class="tab-title">Allen vs Duncan <span class="date-badge">Oct 10</span></span><span class="tab-sub">Brendan Allen vs Christian Leroy Duncan</span></a><a class="tab" role="tab" id="tab-ufc-fight-night-buckley-vs-malott" href="#ufc-fight-night-buckley-vs-malott" data-target="ufc-fight-night-buckley-vs-malott" aria-controls="ufc-fight-night-buckley-vs-malott"><span class="tab-title">Buckley vs Malott <span class="date-badge">Oct 17</span></span><span class="tab-sub">Joaquin Buckley vs Mike Malott</span></a><a class="tab" role="tab" id="tab-ufc-333-volkanovski-vs-evloev" href="#ufc-333-volkanovski-vs-evloev" data-target="ufc-333-volkanovski-vs-evloev" aria-controls="ufc-333-volkanovski-vs-evloev"><span class="tab-title">UFC 333 <span class="date-badge">Oct 24</span></span><span class="tab-sub">Alexander Volkanovski vs Movsar Evloev</span></a><a class="tab" role="tab" id="tab-ufc-fight-night-moicano-vs-nolan" href="#ufc-fight-night-moicano-vs-nolan" data-target="ufc-fight-night-moicano-vs-nolan" aria-controls="ufc-fight-night-moicano-vs-nolan"><span class="tab-title">Moicano vs Nolan <span class="date-badge">Oct 31</span></span><span class="tab-sub">Renato Moicano vs Tom Nolan</span></a><a class="tab" role="tab" id="tab-ufc-fight-night-bonfim-vs-brady" href="#ufc-fight-night-bonfim-vs-brady" data-target="ufc-fight-night-bonfim-vs-brady" aria-controls="ufc-fight-night-bonfim-vs-brady"><span class="tab-title">Bonfim vs Brady <span class="date-badge">Nov 7</span></span><span class="tab-sub">Gabriel Bonfim vs Sean Brady</span></a><a class="tab" role="tab" id="tab-ufc-334-gane-vs-hokit" href="#ufc-334-gane-vs-hokit" data-target="ufc-334-gane-vs-hokit" aria-controls="ufc-334-gane-vs-hokit"><span class="tab-title">UFC 334 <span class="date-badge">Nov 14</span></span><span class="tab-sub">Ciryl Gane vs Josh Hokit</span></a></nav>
+  <nav class="tabs" role="tablist" aria-label="Events"><a class="tab next" role="tab" id="tab-ufc-fight-night-rosas-jr-vs-barcelos" href="#ufc-fight-night-rosas-jr-vs-barcelos" data-target="ufc-fight-night-rosas-jr-vs-barcelos" aria-controls="ufc-fight-night-rosas-jr-vs-barcelos"><span class="tab-title">Rosas Jr. vs Barcelos <span class="date-badge">Sep 26</span><span class="upd-dot" title="Card changed in the last 7 days" aria-label="card changed recently"></span></span><span class="tab-sub">Raul Rosas Jr. vs Raoni Barcelos</span></a><a class="tab" role="tab" id="tab-ufc-332-silva-vs-wang" href="#ufc-332-silva-vs-wang" data-target="ufc-332-silva-vs-wang" aria-controls="ufc-332-silva-vs-wang"><span class="tab-title">UFC 332 <span class="date-badge">Oct 3</span></span><span class="tab-sub">Natalia Silva vs Wang Cong</span></a><a class="tab" role="tab" id="tab-ufc-fight-night-allen-vs-duncan" href="#ufc-fight-night-allen-vs-duncan" data-target="ufc-fight-night-allen-vs-duncan" aria-controls="ufc-fight-night-allen-vs-duncan"><span class="tab-title">Allen vs Duncan <span class="date-badge">Oct 10</span></span><span class="tab-sub">Brendan Allen vs Christian Leroy Duncan</span></a><a class="tab" role="tab" id="tab-ufc-fight-night-buckley-vs-malott" href="#ufc-fight-night-buckley-vs-malott" data-target="ufc-fight-night-buckley-vs-malott" aria-controls="ufc-fight-night-buckley-vs-malott"><span class="tab-title">Buckley vs Malott <span class="date-badge">Oct 17</span><span class="upd-dot" title="Card changed in the last 7 days" aria-label="card changed recently"></span></span><span class="tab-sub">Joaquin Buckley vs Mike Malott</span></a><a class="tab" role="tab" id="tab-ufc-333-volkanovski-vs-evloev" href="#ufc-333-volkanovski-vs-evloev" data-target="ufc-333-volkanovski-vs-evloev" aria-controls="ufc-333-volkanovski-vs-evloev"><span class="tab-title">UFC 333 <span class="date-badge">Oct 24</span></span><span class="tab-sub">Alexander Volkanovski vs Movsar Evloev</span></a><a class="tab" role="tab" id="tab-ufc-fight-night-moicano-vs-nolan" href="#ufc-fight-night-moicano-vs-nolan" data-target="ufc-fight-night-moicano-vs-nolan" aria-controls="ufc-fight-night-moicano-vs-nolan"><span class="tab-title">Moicano vs Nolan <span class="date-badge">Oct 31</span></span><span class="tab-sub">Renato Moicano vs Tom Nolan</span></a><a class="tab" role="tab" id="tab-ufc-fight-night-bonfim-vs-brady" href="#ufc-fight-night-bonfim-vs-brady" data-target="ufc-fight-night-bonfim-vs-brady" aria-controls="ufc-fight-night-bonfim-vs-brady"><span class="tab-title">Bonfim vs Brady <span class="date-badge">Nov 7</span></span><span class="tab-sub">Gabriel Bonfim vs Sean Brady</span></a><a class="tab" role="tab" id="tab-ufc-334-gane-vs-hokit" href="#ufc-334-gane-vs-hokit" data-target="ufc-334-gane-vs-hokit" aria-controls="ufc-334-gane-vs-hokit"><span class="tab-title">UFC 334 <span class="date-badge">Nov 14</span></span><span class="tab-sub">Ciryl Gane vs Josh Hokit</span></a></nav>
 </header>
 <div class="wrap">
   <div class="meta summary">
     <span><b>8</b> scheduled events, <b>8</b> predicted, <b>64</b> bouts</span>
     <span>Model <b>model_2026-09-23</b> (lightgbm, data to 2026-09-19)</span>
-    <span>Generated <b>2026-09-26T08:05:08+00:00</b></span>
+    <span>Generated <b>2026-09-26T08:15:23+00:00</b></span>
   </div>
+  <section class="updates" aria-labelledby="updates-h">
+    <div class="updates-head"><h2 id="updates-h">Card changes</h2>
+      <span class="checked">Cards last checked with ufc.com: <b>Sat 26 Sep 2026, 08:15 UTC</b></span></div>
+    <ul class="feed"><li class="feed-row"><div class="feed-when">Sat 26 Sep 2026, 08:05 UTC</div><div><a class="feed-event" href="#ufc-fight-night-rosas-jr-vs-barcelos">UFC Fight Night: Rosas Jr. vs Barcelos</a><ul class="chg-list"><li><span class="chg in">Replacement</span><b>Luis Hernandez</b> replaces <s>Mickey Gall</s> vs Sedriques Dumas</li></ul></div></li><li class="feed-row"><div class="feed-when">Sat 26 Sep 2026, 08:05 UTC</div><div><a class="feed-event" href="#ufc-fight-night-buckley-vs-malott">UFC Fight Night: Buckley vs Malott</a><ul class="chg-list"><li><span class="chg add">New bout</span><b>Kyle Nelson</b> vs <b>Cristian Perez Gonzalez</b></li></ul></div></li></ul>
+  </section>
   <main>
 <section class="event-panel" id="ufc-fight-night-rosas-jr-vs-barcelos" data-title="UFC Fight Night: Rosas Jr. vs Barcelos" aria-labelledby="h-ufc-fight-night-rosas-jr-vs-barcelos">
   <header class="panel-head">
     <h2 id="h-ufc-fight-night-rosas-jr-vs-barcelos">UFC Fight Night: Rosas Jr. vs Barcelos<span class="label-next">Next event</span></h2>
-    <div class="meta"><span>Date <b>Saturday 26 September 2026</b></span><span>Venue <b>Meta APEX, Las Vegas, NV, United States</b></span><span>12 bouts</span><a class="standalone" href="2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.html">Standalone page</a></div>
+    <div class="meta"><span>Date <b>Saturday 26 September 2026</b></span><span>Venue <b>Meta APEX, Las Vegas, NV, United States</b></span><span>12 bouts</span><span>Card checked <b>Sat 26 Sep 2026, 08:15 UTC</b></span><a class="standalone" href="2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.html">Standalone page</a></div>
+    <details class="panel-changes" open><summary>Card changes (1)</summary><ul class="feed"><li class="feed-row"><div class="feed-when">Sat 26 Sep 2026, 08:05 UTC</div><ul class="chg-list"><li><span class="chg in">Replacement</span><b>Luis Hernandez</b> replaces <s>Mickey Gall</s> vs Sedriques Dumas</li></ul></li></ul></details>
   </header>
   <div class="grid">
 <article class="bout">
@@ -277,7 +311,8 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
 <section class="event-panel" id="ufc-332-silva-vs-wang" data-title="UFC 332: Silva vs Wang" aria-labelledby="h-ufc-332-silva-vs-wang">
   <header class="panel-head">
     <h2 id="h-ufc-332-silva-vs-wang">UFC 332: Silva vs Wang</h2>
-    <div class="meta"><span>Date <b>Saturday 03 October 2026</b></span><span>Venue <b>Delta Center, Salt Lake City, UT, United States</b></span><span>13 bouts</span><a class="standalone" href="2026-10-03_ufc-332-silva-vs-wang.html">Standalone page</a></div>
+    <div class="meta"><span>Date <b>Saturday 03 October 2026</b></span><span>Venue <b>Delta Center, Salt Lake City, UT, United States</b></span><span>13 bouts</span><span>Card checked <b>Sat 26 Sep 2026, 08:15 UTC</b></span><a class="standalone" href="2026-10-03_ufc-332-silva-vs-wang.html">Standalone page</a></div>
+    
   </header>
   <div class="grid">
 <article class="bout">
@@ -441,7 +476,8 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
 <section class="event-panel" id="ufc-fight-night-allen-vs-duncan" data-title="UFC Fight Night: Allen vs Duncan" aria-labelledby="h-ufc-fight-night-allen-vs-duncan">
   <header class="panel-head">
     <h2 id="h-ufc-fight-night-allen-vs-duncan">UFC Fight Night: Allen vs Duncan</h2>
-    <div class="meta"><span>Date <b>Saturday 10 October 2026</b></span><span>Venue <b>Meta APEX, Las Vegas, NV, United States</b></span><span>1 bout</span><a class="standalone" href="2026-10-10_ufc-fight-night-allen-vs-duncan.html">Standalone page</a></div>
+    <div class="meta"><span>Date <b>Saturday 10 October 2026</b></span><span>Venue <b>Meta APEX, Las Vegas, NV, United States</b></span><span>1 bout</span><span>Card checked <b>Sat 26 Sep 2026, 08:15 UTC</b></span><a class="standalone" href="2026-10-10_ufc-fight-night-allen-vs-duncan.html">Standalone page</a></div>
+    
   </header>
   <div class="grid">
 <article class="bout">
@@ -461,7 +497,8 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
 <section class="event-panel" id="ufc-fight-night-buckley-vs-malott" data-title="UFC Fight Night: Buckley vs Malott" aria-labelledby="h-ufc-fight-night-buckley-vs-malott">
   <header class="panel-head">
     <h2 id="h-ufc-fight-night-buckley-vs-malott">UFC Fight Night: Buckley vs Malott</h2>
-    <div class="meta"><span>Date <b>Saturday 17 October 2026</b></span><span>Venue <b>Rogers Place, Edmonton, AB, Canada</b></span><span>13 bouts</span><span class="warn">1 fighter(s) not in UFC data (treated as debuts)</span><a class="standalone" href="2026-10-17_ufc-fight-night-buckley-vs-malott.html">Standalone page</a></div>
+    <div class="meta"><span>Date <b>Saturday 17 October 2026</b></span><span>Venue <b>Rogers Place, Edmonton, AB, Canada</b></span><span>13 bouts</span><span>Card checked <b>Sat 26 Sep 2026, 08:15 UTC</b></span><span class="warn">1 fighter(s) not in UFC data (treated as debuts)</span><a class="standalone" href="2026-10-17_ufc-fight-night-buckley-vs-malott.html">Standalone page</a></div>
+    <details class="panel-changes" open><summary>Card changes (1)</summary><ul class="feed"><li class="feed-row"><div class="feed-when">Sat 26 Sep 2026, 08:05 UTC</div><ul class="chg-list"><li><span class="chg add">New bout</span><b>Kyle Nelson</b> vs <b>Cristian Perez Gonzalez</b></li></ul></li></ul></details>
   </header>
   <div class="grid">
 <article class="bout">
@@ -625,7 +662,8 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
 <section class="event-panel" id="ufc-333-volkanovski-vs-evloev" data-title="UFC 333: Volkanovski vs Evloev" aria-labelledby="h-ufc-333-volkanovski-vs-evloev">
   <header class="panel-head">
     <h2 id="h-ufc-333-volkanovski-vs-evloev">UFC 333: Volkanovski vs Evloev</h2>
-    <div class="meta"><span>Date <b>Saturday 24 October 2026</b></span><span>Venue <b>Etihad Arena, Abu Dhabi, United Arab Emirates</b></span><span>9 bouts</span><a class="standalone" href="2026-10-24_ufc-333-volkanovski-vs-evloev.html">Standalone page</a></div>
+    <div class="meta"><span>Date <b>Saturday 24 October 2026</b></span><span>Venue <b>Etihad Arena, Abu Dhabi, United Arab Emirates</b></span><span>9 bouts</span><span>Card checked <b>Sat 26 Sep 2026, 08:15 UTC</b></span><a class="standalone" href="2026-10-24_ufc-333-volkanovski-vs-evloev.html">Standalone page</a></div>
+    
   </header>
   <div class="grid">
 <article class="bout">
@@ -741,7 +779,8 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
 <section class="event-panel" id="ufc-fight-night-moicano-vs-nolan" data-title="UFC Fight Night: Moicano vs Nolan" aria-labelledby="h-ufc-fight-night-moicano-vs-nolan">
   <header class="panel-head">
     <h2 id="h-ufc-fight-night-moicano-vs-nolan">UFC Fight Night: Moicano vs Nolan</h2>
-    <div class="meta"><span>Date <b>Saturday 31 October 2026</b></span><span>Venue <b>Meta APEX, Las Vegas, NV, United States</b></span><span>3 bouts</span><a class="standalone" href="2026-10-31_ufc-fight-night-moicano-vs-nolan.html">Standalone page</a></div>
+    <div class="meta"><span>Date <b>Saturday 31 October 2026</b></span><span>Venue <b>Meta APEX, Las Vegas, NV, United States</b></span><span>3 bouts</span><span>Card checked <b>Sat 26 Sep 2026, 08:15 UTC</b></span><a class="standalone" href="2026-10-31_ufc-fight-night-moicano-vs-nolan.html">Standalone page</a></div>
+    
   </header>
   <div class="grid">
 <article class="bout">
@@ -785,7 +824,8 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
 <section class="event-panel" id="ufc-fight-night-bonfim-vs-brady" data-title="UFC Fight Night: Bonfim vs Brady" aria-labelledby="h-ufc-fight-night-bonfim-vs-brady">
   <header class="panel-head">
     <h2 id="h-ufc-fight-night-bonfim-vs-brady">UFC Fight Night: Bonfim vs Brady</h2>
-    <div class="meta"><span>Date <b>Saturday 07 November 2026</b></span><span>Venue <b>Meta APEX, Las Vegas, NV, United States</b></span><span>1 bout</span><a class="standalone" href="2026-11-07_ufc-fight-night-bonfim-vs-brady.html">Standalone page</a></div>
+    <div class="meta"><span>Date <b>Saturday 07 November 2026</b></span><span>Venue <b>Meta APEX, Las Vegas, NV, United States</b></span><span>1 bout</span><span>Card checked <b>Sat 26 Sep 2026, 08:15 UTC</b></span><a class="standalone" href="2026-11-07_ufc-fight-night-bonfim-vs-brady.html">Standalone page</a></div>
+    
   </header>
   <div class="grid">
 <article class="bout">
@@ -805,7 +845,8 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
 <section class="event-panel" id="ufc-334-gane-vs-hokit" data-title="UFC 334: Gane vs Hokit" aria-labelledby="h-ufc-334-gane-vs-hokit">
   <header class="panel-head">
     <h2 id="h-ufc-334-gane-vs-hokit">UFC 334: Gane vs Hokit</h2>
-    <div class="meta"><span>Date <b>Saturday 14 November 2026</b></span><span>Venue <b>Madison Square Garden, New York, NY, United States</b></span><span>12 bouts</span><a class="standalone" href="2026-11-14_ufc-334-gane-vs-hokit.html">Standalone page</a></div>
+    <div class="meta"><span>Date <b>Saturday 14 November 2026</b></span><span>Venue <b>Madison Square Garden, New York, NY, United States</b></span><span>12 bouts</span><span>Card checked <b>Sat 26 Sep 2026, 08:15 UTC</b></span><a class="standalone" href="2026-11-14_ufc-334-gane-vs-hokit.html">Standalone page</a></div>
+    
   </header>
   <div class="grid">
 <article class="bout">
