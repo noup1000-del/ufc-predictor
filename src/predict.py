@@ -302,7 +302,8 @@ def run_predict_all(fetch: bool = True) -> list[dict]:
 
     index = out_dir / "index.html"
     reviews, board = load_reviews()
-    _write_atomic(index, render_index(entries, meta, reviews=reviews, board=board))
+    _write_atomic(index, render_index(entries, meta, reviews=reviews, board=board,
+                                      goatcounter_code=(cfg.get("analytics") or {}).get("goatcounter_code")))
     print(format_schedule(entries))
     print(f"\nSaved {index}\n")
     return entries

@@ -630,6 +630,9 @@ DASHBOARD_JS = """
     if (updateUrl && window.location.hash !== "#" + id) {
       try { history.pushState(null, "", "#" + id); } catch (e) { window.location.hash = id; }
     }
+    if (updateUrl && window.goatcounter && window.goatcounter.count) {
+      try { window.goatcounter.count({path: "tab/" + id, title: document.title, event: true}); } catch (e) {}
+    }
   }
 
   function currentHash() {
@@ -663,8 +666,27 @@ DASHBOARD_JS = """
 """
 
 
+_GOATCOUNTER_CODE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$")
+
+
+def analytics_tag(goatcounter_code: str | None) -> tuple[str, str]:
+    """(<script> for <head>, footer note) for GoatCounter, or ("", "") when no code is set.
+    GoatCounter is cookie-free and stores no personal data; it is the one external script the
+    dashboard may load (config `analytics.goatcounter_code`)."""
+    if not goatcounter_code:
+        return "", ""
+    if not _GOATCOUNTER_CODE.match(goatcounter_code):
+        raise ValueError(f"invalid GoatCounter code {goatcounter_code!r} (lowercase letters, digits, hyphens)")
+    tag = (f'<script data-goatcounter="https://{goatcounter_code}.goatcounter.com/count" '
+           f'async src="https://gc.zgo.at/count.js"></script>\n')
+    note = (" Anonymous visit counts via GoatCounter (no cookies, no personal data): "
+            f"https://{goatcounter_code}.goatcounter.com")
+    return tag, note
+
+
 def render_index(entries: list[dict], meta: dict, generated: str | None = None,
-                 reviews: list[dict] | None = None, board: dict | None = None) -> str:
+                 reviews: list[dict] | None = None, board: dict | None = None,
+                 goatcounter_code: str | None = None) -> str:
     """Single-file dashboard of every scheduled card: event tabs (a <select> on narrow
     screens), one `<section class="event-panel" id="<event_slug>">` per event with all bout
     cards, `#<event_slug>` deep links, default = the next event with bouts.
@@ -673,7 +695,7 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None,
     report (standalone html file name or None), unmatched, headliner (main-event prediction or
     None), pred (predict_card output with `_drivers`, or None), fetched_at and changes (line-up
     changes, see upcoming.diff_bouts). `reviews`/`board` are review.load_reviews() output for the
-    Results tab. Self-contained: embedded CSS
+    Results tab. `goatcounter_code` adds the GoatCounter visit counter (off when empty). Self-contained: embedded CSS
     and one inline script, no external resources; everything still shows without JavaScript."""
     generated = generated or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     entries = sorted(entries, key=lambda e: (e["event_date"], e["event_name"]))
@@ -698,6 +720,7 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None,
     panels = ("".join(_panel(e, s, i == next_i) for i, (e, s) in enumerate(zip(entries, slugs)))
               + rs_panel + ch_panel)
     predicted = sum(1 for e in entries if e.get("headliner"))
+    analytics, analytics_note = analytics_tag(goatcounter_code)
     n_bouts = sum(len(e["pred"]) for e in entries if e.get("pred") is not None)
     return f"""<!doctype html>
 <html lang="en" data-default="{default}">
@@ -706,7 +729,7 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None,
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upcoming UFC predictions</title>
 <style>{CSS}{DASHBOARD_CSS}</style>
-</head>
+{analytics}</head>
 <body>
 <header class="appbar">
   <div class="appbar-inner">
@@ -726,7 +749,7 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None,
   </main>
   <footer>
     Schedule and bouts from the official UFC event pages; cards change often, so later events are
-    more likely to change before fight night. {FOOTER_NOTE}{_accuracy_note(meta)}
+    more likely to change before fight night. {FOOTER_NOTE}{_accuracy_note(meta)}{escape(analytics_note)}
   </footer>
 </div>
 <script>{DASHBOARD_JS}</script>

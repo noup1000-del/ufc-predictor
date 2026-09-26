@@ -40,6 +40,11 @@ upcoming:
   espn_cache_dir: data/raw/espn
   lookahead_days: 45
 
+analytics:
+  # GoatCounter site code (https://<code>.goatcounter.com): cookie-free visit counts for the
+  # published dashboard (index.html only). Empty = no analytics script at all.
+  goatcounter_code: ""
+
 clean:
   min_date: "2005-01-01"
 

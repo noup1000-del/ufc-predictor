@@ -210,6 +210,25 @@ def test_dashboard_lists_card_changes_with_dates(tables, lgbm_artifact):
     assert re.search(r'id="tab-ufc-fight-night-ra-l-vs-o-brien".*?upd-dot', html)
 
 
+def test_analytics_is_off_by_default_and_only_goatcounter_when_on(tables, lgbm_artifact):
+    from src.report import render_index
+    entries, meta = dashboard_entries(tables, lgbm_artifact), lgbm_artifact["metadata"]
+    off = render_index(entries, meta, generated="2030-01-01T00:00:00+00:00")
+    assert "data-goatcounter" not in off and "goatcounter.com" not in off and "gc.zgo.at" not in off
+    assert "async src" not in off and "https://" not in off          # no external resource at all
+    on = render_index(entries, meta, generated="2030-01-01T00:00:00+00:00", goatcounter_code="ufc-demo")
+    head = on[:on.index("</head>")]
+    assert head.count("<script") == 1 and (
+        '<script data-goatcounter="https://ufc-demo.goatcounter.com/count" '
+        'async src="https://gc.zgo.at/count.js"></script>') in head
+    assert set(re.findall(r"https?://([a-z0-9.-]+)", on)) == {"ufc-demo.goatcounter.com", "gc.zgo.at"}
+    assert "Anonymous visit counts via GoatCounter (no cookies" in on
+    assert 'goatcounter.count({path: "tab/" + id' in on          # tab switches are counted
+    for bad in ("UFC", "a b", "x.evil.com/", "-x", "a" * 60):
+        with pytest.raises(ValueError):
+            render_index(entries, meta, goatcounter_code=bad)
+
+
 def test_dashboard_without_changes_says_so(tables, lgbm_artifact):
     from src.report import render_index
     entries = dashboard_entries(tables, lgbm_artifact)
@@ -253,11 +272,12 @@ def _browser() -> str | None:
     return next((c for c in candidates if c and Path(c).exists()), None)
 
 
-def _rendered_dom(browser: str, page: Path, fragment: str, profile: Path) -> str:
+def _rendered_dom(browser: str, page: Path, fragment: str, profile: Path, offline: bool = False) -> str:
     import subprocess
     url = page.resolve().as_uri() + fragment
+    extra = ["--host-resolver-rules=MAP * ~NOTFOUND"] if offline else []   # no network: external loads fail
     out = subprocess.run([browser, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
-                          f"--user-data-dir={profile}", "--dump-dom", url],
+                          f"--user-data-dir={profile}", *extra, "--dump-dom", url],
                          capture_output=True, text=True, encoding="utf-8", timeout=90)
     return out.stdout
 
@@ -283,6 +303,20 @@ def test_dashboard_script_runs_in_a_real_browser(tables, lgbm_artifact, tmp_path
     shown = re.findall(r'<section class="event-panel[^"]*" id="([a-z0-9-]+)"(?![^>]*hidden)', dom)
     assert shown == [active]
     assert re.search(rf'<a class="tab[^"]*active[^"]*"[^>]*data-target="{active}"[^>]*aria-selected="true"', dom)
+
+
+def test_dashboard_works_when_the_analytics_script_cannot_load(tables, lgbm_artifact, tmp_path):
+    """With GoatCounter enabled but unreachable (offline, ad blocker), the tabs still work."""
+    from src.report import render_index
+    browser = _browser()
+    if browser is None:
+        pytest.skip("no Chromium-based browser available for the headless check")
+    page = tmp_path / "index.html"
+    page.write_text(render_index(dashboard_entries(tables, lgbm_artifact), lgbm_artifact["metadata"],
+                                 goatcounter_code="ufc-demo"), encoding="utf-8")
+    dom = _rendered_dom(browser, page, "#ufc-999-later-card", tmp_path / "profile", offline=True)
+    assert 'data-dashboard="ready"' in dom, dom[:500]
+    assert re.findall(r'<section class="event-panel[^"]*" id="([a-z0-9-]+)"(?![^>]*hidden)', dom) == ["ufc-999-later-card"]
 
 
 def test_slugify():
