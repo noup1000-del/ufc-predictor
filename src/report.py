@@ -105,13 +105,17 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
   background: var(--pick); border-radius: 999px; padding: 2px 8px; vertical-align: 5px; margin-left: 10px; }
 .empty { color: var(--muted); background: var(--panel); border: 1px dashed var(--line); border-radius: 12px;
   padding: 24px 16px; text-align: center; }
-.updates { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
-  margin: 0 0 24px; }
-.updates-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px;
-  margin-bottom: 8px; }
-.updates h2 { margin: 0; font-size: 16px; }
-.checked { color: var(--muted); font-size: 12px; }
-.checked b { color: var(--text); font-weight: 600; }
+.updates { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 16px; }
+.feed-date { margin-left: 8px; color: var(--muted); font-size: 12px; }
+.seg-title { margin: 26px 0 12px; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--pick); display: flex; align-items: center; gap: 10px; }
+.seg-title span { color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: none; font-size: 12px; }
+.seg-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.panel-head + .seg-title { margin-top: 6px; }
+.tab-changes { border-style: dashed; }
+.tab-changes.active { border-style: solid; }
+.count-badge { display: inline-block; min-width: 18px; margin-left: 4px; padding: 0 6px; border-radius: 999px;
+  background: var(--pick); color: #1b1300; font-size: 11px; font-weight: 700; text-align: center; vertical-align: 1px; }
 .feed { list-style: none; margin: 0; padding: 0; }
 .feed-row { display: grid; grid-template-columns: 190px 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
 .feed-row:first-child { border-top: 0; }
@@ -224,9 +228,28 @@ def _accuracy_note(meta: dict) -> str:
     return f" On held-out test fights this model picked the winner {acc:.0%} of the time."
 
 
+SEGMENT_TITLES = {"main": "Main card", "prelims": "Prelims", "early_prelims": "Early prelims"}
+
+
 def _bout_grid(pred: pd.DataFrame) -> str:
+    """Bout cards in card order, grouped under Main card / Prelims / Early prelims headings when
+    the card says which segment each bout is on (ufc.com cards); one plain grid otherwise."""
     # records, not itertuples: itertuples renames the `_drivers` column
-    return "".join(_bout_card(SimpleNamespace(**r)) for r in pred.sort_values("bout_order").to_dict("records"))
+    rows = pred.sort_values("bout_order").to_dict("records")
+    segs = [r.get("card_segment") if isinstance(r.get("card_segment"), str) else None for r in rows]
+
+    def grid(items):
+        return '<div class="grid">' + "".join(_bout_card(SimpleNamespace(**r)) for r in items) + "</div>"
+
+    if not any(segs):
+        return grid(rows)
+    groups: list[tuple[str | None, list[dict]]] = []
+    for seg, r in zip(segs, rows):
+        if not groups or groups[-1][0] != seg:
+            groups.append((seg, []))
+        groups[-1][1].append(r)
+    return "\n".join(f'<h3 class="seg-title">{SEGMENT_TITLES.get(seg, "Other bouts")} '
+                     f'<span>{_bouts(len(items))}</span></h3>{grid(items)}' for seg, items in groups)
 
 
 def render_html(pred: pd.DataFrame, card, meta: dict, index_link: bool = False) -> str:
@@ -258,7 +281,7 @@ def render_html(pred: pd.DataFrame, card, meta: dict, index_link: bool = False) 
       <span>{_bouts(len(pred))}</span>
     </div>
   </header>
-  <main class="grid">{cards}
+  <main>{cards}
   </main>
   <footer>
     {FOOTER_NOTE}{acc_note}
@@ -292,7 +315,6 @@ def _headliner_bar(h: dict) -> str:
 
 
 RECENT_CHANGE_DAYS = 7    # tabs get an "updated" dot for changes this recent
-MAX_FEED_CHANGES = 12     # changes listed in the overview feed (newest first)
 
 
 def _when(iso: str | None) -> str:
@@ -327,24 +349,45 @@ def _is_recent(change: dict, now: datetime) -> bool:
     return (now - t).days < RECENT_CHANGE_DAYS
 
 
-def _changes_feed(entries: list[dict], slugs: list[str]) -> str:
-    """Overview block: latest line-up changes across all scheduled events + last check time."""
+CHANGES_ID = "card-changes"   # id/anchor of the all-events "Card changes" tab
+
+
+def _short_date(iso: str) -> str:
+    d = date.fromisoformat(iso)
+    return f'{d.strftime("%a")} {d.day} {d.strftime("%b")}'
+
+
+def _changes_view(entries: list[dict], slugs: list[str]) -> tuple[str, str, str]:
+    """The all-events "Card changes" tab: (tab link, <option>, panel). Every recorded line-up
+    change of every scheduled event, newest first, plus when the cards were last checked."""
     items = [(c.get("detected_at") or "", e, s, c) for e, s in zip(entries, slugs) for c in e.get("changes") or []]
     items.sort(key=lambda x: x[0], reverse=True)
     checked = max((e["fetched_at"] for e in entries if e.get("fetched_at")), default=None)
     rows = "".join(
         f'<li class="feed-row"><div class="feed-when">{escape(_when(when))}</div>'
         f'<div><a class="feed-event" href="#{s}">{escape(e["event_name"])}</a>'
+        f'<span class="feed-date">{_short_date(e["event_date"])}</span>'
         f'<ul class="chg-list">{_change_items(c)}</ul></div></li>'
-        for when, e, s, c in items[:MAX_FEED_CHANGES])
+        for when, e, s, c in items)
     body = (f'<ul class="feed">{rows}</ul>' if rows else
             '<p class="feed-none">No line-up changes detected since the cards were first fetched.</p>')
-    return f"""
-  <section class="updates" aria-labelledby="updates-h">
-    <div class="updates-head"><h2 id="updates-h">Card changes</h2>
-      <span class="checked">Cards last checked with ufc.com: <b>{escape(_when(checked))}</b></span></div>
-    {body}
-  </section>"""
+    n = len(items)
+    count = f'<span class="count-badge">{n}</span>' if n else ""
+    tab = (f'<a class="tab tab-changes" role="tab" id="tab-{CHANGES_ID}" href="#{CHANGES_ID}" '
+           f'data-target="{CHANGES_ID}" aria-controls="{CHANGES_ID}">'
+           f'<span class="tab-title">Card changes {count}</span>'
+           f'<span class="tab-sub">All events</span></a>')
+    option = f'<option value="{CHANGES_ID}">Card changes ({n})</option>'
+    panel = f"""
+<section class="event-panel changes-panel" id="{CHANGES_ID}" data-title="Card changes" aria-labelledby="h-{CHANGES_ID}">
+  <header class="panel-head">
+    <h2 id="h-{CHANGES_ID}">Card changes</h2>
+    <div class="meta"><span>Replacements, new bouts and bouts taken off every scheduled card, newest first</span>
+      <span>Cards last checked with ufc.com <b>{escape(_when(checked))}</b></span></div>
+  </header>
+  <div class="updates">{body}</div>
+</section>"""
+    return tab, option, panel
 
 
 def _panel_changes(e: dict) -> str:
@@ -371,7 +414,7 @@ def _panel(e: dict, slug: str, is_next: bool) -> str:
         facts.append(f'<a class="standalone" href="{escape(e["report"])}">Standalone page</a>')
     pred = e.get("pred")
     if pred is not None and len(pred):
-        body = f'<div class="grid">{_bout_grid(pred)}\n  </div>'
+        body = _bout_grid(pred)
     else:
         body = '<p class="empty">No bouts announced yet, so nothing to predict. Check back after the next schedule fetch.</p>'
     label = '<span class="label-next">Next event</span>' if is_next else ""
@@ -501,9 +544,10 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None) 
     now = datetime.fromisoformat(generated)
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
-    tabs = "".join(_tab(e, s, i == next_i, now) for i, (e, s) in enumerate(zip(entries, slugs)))
-    options = "".join(_option(e, s) for e, s in zip(entries, slugs))
-    panels = "".join(_panel(e, s, i == next_i) for i, (e, s) in enumerate(zip(entries, slugs)))
+    ch_tab, ch_option, ch_panel = _changes_view(entries, slugs)
+    tabs = ch_tab + "".join(_tab(e, s, i == next_i, now) for i, (e, s) in enumerate(zip(entries, slugs)))
+    options = "".join(_option(e, s) for e, s in zip(entries, slugs)) + ch_option
+    panels = "".join(_panel(e, s, i == next_i) for i, (e, s) in enumerate(zip(entries, slugs))) + ch_panel
     predicted = sum(1 for e in entries if e.get("headliner"))
     n_bouts = sum(len(e["pred"]) for e in entries if e.get("pred") is not None)
     return f"""<!doctype html>
@@ -528,7 +572,7 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None) 
     <span><b>{len(entries)}</b> scheduled events, <b>{predicted}</b> predicted, <b>{n_bouts}</b> bouts</span>
     <span>Model <b>{escape(str(meta.get("model_version", "")))}</b> ({escape(str(meta.get("model_type", "")))}, data to {escape(str(meta.get("data_cutoff", "")))})</span>
     <span>Generated <b>{escape(generated)}</b></span>
-  </div>{_changes_feed(entries, slugs)}
+  </div>
   <main>{panels}
   </main>
   <footer>

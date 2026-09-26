@@ -108,6 +108,21 @@ def test_combined_contributions_mirror_prediction_sign(tables, request, which):
     assert total[0] == pytest.approx(-total[1])  # swapping the fighters flips every driver
 
 
+def test_bouts_grouped_by_card_segment(tables, lgbm_artifact):
+    from src.report import _bout_grid
+    c = card("2030-01-04", [("A", "a", "B", "b", "Lightweight"), ("E", "e", "New Guy", None, "Welterweight"),
+                            ("C", "c", "D", "d", "Lightweight")])
+    pred = predict_card(c, tables, lgbm_artifact)
+    assert "card_segment" in pred and pred["card_segment"].isna().all()
+    assert "seg-title" not in _bout_grid(pred)                      # manual cards: one plain grid
+    pred["card_segment"] = ["main", "prelims", "prelims"]
+    html = _bout_grid(pred)
+    assert re.findall(r'<h3 class="seg-title">([A-Za-z ]+) <span>(\d+) bouts?</span>', html) == [
+        ("Main card", "1"), ("Prelims", "2")]
+    assert html.count('<div class="grid">') == 2 and html.count('<article class="bout">') == 3
+    assert html.index("Main card") < html.index(">A<") < html.index("Prelims") < html.index(">E<")
+
+
 def test_unknown_stance_shows_na_not_nan():
     from src.predict import driver_values
     row = pd.Series({"f1_stance": np.nan, "f2_stance": "Orthodox"})
@@ -177,10 +192,15 @@ def test_dashboard_lists_card_changes_with_dates(tables, lgbm_artifact):
     from src.report import render_index
     html = render_index(dashboard_entries(tables, lgbm_artifact), lgbm_artifact["metadata"],
                         generated="2030-01-01T00:00:00+00:00")
-    feed = html[html.index('<section class="updates"'):html.index("<main>")]
-    assert "Cards last checked with ufc.com: <b>Tue 01 Jan 2030, 00:00 UTC</b>" in feed
+    # no changes box above the events any more: the all-events feed is its own tab and panel
+    assert '<section class="updates"' not in html
+    assert html.index("<main>") < html.index('id="card-changes"')
+    feed = html[html.index('<section class="event-panel changes-panel" id="card-changes"'):]
+    assert "Cards last checked with ufc.com <b>Tue 01 Jan 2030, 00:00 UTC</b>" in feed
     assert feed.index("Sun 30 Dec 2029, 08:05 UTC") < feed.index("Sat 01 Dec 2029, 09:00 UTC")   # newest first
     assert '<a class="feed-event" href="#ufc-fight-night-ra-l-vs-o-brien">' in feed
+    assert 'Card changes <span class="count-badge">2</span>' in html                         # tab label
+    assert '<option value="card-changes">Card changes (2)</option>' in html
     assert "<b>Luis Hernandez</b> replaces <s>Mickey &lt;Gall&gt;</s> vs Sedriques Dumas" in feed   # escaped
     assert "New bout</span><b>Old</b> vs <b>Bout</b>" in feed and "Off the card</span><s>Gone vs Fighter</s>" in feed
     panel = html[html.index('id="ufc-fight-night-ra-l-vs-o-brien"'):html.index('id="ufc-999-later-card"')]
@@ -206,8 +226,10 @@ def test_dashboard_contains_every_event_and_the_tab_switcher(tables, lgbm_artifa
     assert html.startswith("<!doctype html>") and html.rstrip().endswith("</html>")
     ids = re.findall(r'<section class="event-panel" id="([a-z0-9-]+)"', html)
     assert ids == ["ufc-fight-night-ra-l-vs-o-brien", "ufc-999-later-card", "ufc-fight-night-card-tba"]  # by date
-    assert re.findall(r'<a class="tab[^"]*" role="tab" id="tab-([a-z0-9-]+)" href="#\1" data-target="\1"', html) == ids
-    assert re.findall(r'<option value="([a-z0-9-]+)">', html) == ids                       # mobile <select>
+    tab_ids = re.findall(r'<a class="tab[^"]*" role="tab" id="tab-([a-z0-9-]+)" href="#\1" data-target="\1"', html)
+    assert tab_ids == ["card-changes"] + ids                                                # changes tab first
+    assert re.findall(r'<option value="([a-z0-9-]+)">', html) == ids + ["card-changes"]    # mobile <select>
+    assert re.findall(r'<section class="event-panel changes-panel" id="([a-z0-9-]+)"', html) == ["card-changes"]
     assert '<html lang="en" data-default="ufc-fight-night-ra-l-vs-o-brien">' in html      # next card with bouts
     assert "UFC 999 <span class=\"date-badge\">Feb 1</span>" in html                     # short title + date badge
     assert "Raúl vs O&#x27;Brien <span class=\"date-badge\">Jan 10</span>" in html
@@ -244,6 +266,7 @@ def _rendered_dom(browser: str, page: Path, fragment: str, profile: Path) -> str
     ("", "ufc-fight-night-ra-l-vs-o-brien"),               # default: the next card with bouts
     ("#ufc-999-later-card", "ufc-999-later-card"),        # deep link
     ("#no-such-event", "ufc-fight-night-ra-l-vs-o-brien"),  # unknown hash falls back to the default
+    ("#card-changes", "card-changes"),                     # the all-events changes tab
 ])
 def test_dashboard_script_runs_in_a_real_browser(tables, lgbm_artifact, tmp_path, fragment, active):
     """Runs the page in headless Edge/Chrome: the script's last statement marks the page ready,
@@ -257,7 +280,7 @@ def test_dashboard_script_runs_in_a_real_browser(tables, lgbm_artifact, tmp_path
                     encoding="utf-8")
     dom = _rendered_dom(browser, page, fragment, tmp_path / "profile")
     assert 'data-dashboard="ready"' in dom, dom[:500]
-    shown = re.findall(r'<section class="event-panel" id="([a-z0-9-]+)"(?![^>]*hidden)', dom)
+    shown = re.findall(r'<section class="event-panel[^"]*" id="([a-z0-9-]+)"(?![^>]*hidden)', dom)
     assert shown == [active]
     assert re.search(rf'<a class="tab[^"]*active[^"]*"[^>]*data-target="{active}"[^>]*aria-selected="true"', dom)
 

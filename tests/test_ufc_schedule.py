@@ -58,6 +58,7 @@ def test_event_page_bouts():
         (4, "Cat Weight", "Other Guy", "Catch Weight", 0, 3),
         (5, "Early Bird", "Last Fight", "Flyweight", 0, 3),       # bout without an opponent skipped
     ]
+    assert [b.card_segment for b in card.bouts] == ["main", "main", "main", "prelims", "early_prelims"]
 
 
 def test_clean_event_name():

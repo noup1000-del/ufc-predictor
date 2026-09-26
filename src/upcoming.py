@@ -48,6 +48,7 @@ class Bout:
     fighter_2_match: str | None = None
     is_title_fight: int | None = None   # None -> predict.py default (0)
     scheduled_rounds: int | None = None  # None -> predict.py default (5 for bout 1, else 3)
+    card_segment: str | None = None      # "main" | "prelims" | "early_prelims" (ufc.com), else None
 
 
 @dataclass
@@ -95,7 +96,8 @@ def load_manual_card(path: Path, today: date) -> Card | None:
                  fighter_1_id=b.get("fighter_1_id") or None, fighter_2_id=b.get("fighter_2_id") or None,
                  fighter_1_match="manual" if b.get("fighter_1_id") else None,
                  fighter_2_match="manual" if b.get("fighter_2_id") else None,
-                 is_title_fight=b.get("is_title_fight"), scheduled_rounds=b.get("scheduled_rounds"))
+                 is_title_fight=b.get("is_title_fight"), scheduled_rounds=b.get("scheduled_rounds"),
+                 card_segment=b.get("card_segment"))
             for i, b in enumerate(data["bouts"])
         ]
     except (KeyError, TypeError, ValueError) as e:
@@ -170,7 +172,8 @@ def _ufc_event_date(date_el) -> date | None:
     return None
 
 
-_SEGMENT_IDS = ("main-card", "prelims-card", "early-prelims")  # page order = bout order
+# Page section id -> card_segment; page order = bout order.
+_SEGMENTS = (("main-card", "main"), ("prelims-card", "prelims"), ("early-prelims", "early_prelims"))
 
 
 def parse_ufc_event_page(html: str, event: ScheduledEvent) -> Card:
@@ -185,13 +188,13 @@ def parse_ufc_event_page(html: str, event: ScheduledEvent) -> Card:
     if not event_name or event_name.upper() == "UFC":
         event_name = f"UFC: {event.headline}"
 
-    fights = [f for seg_id in _SEGMENT_IDS if (seg := soup.find(id=seg_id)) is not None
+    fights = [(name, f) for seg_id, name in _SEGMENTS if (seg := soup.find(id=seg_id)) is not None
               for f in seg.select(".c-listing-fight")]
-    if not fights:  # layout without segment ids
-        fights = soup.select(".c-listing-fight")
+    if not fights:  # layout without segment ids: no grouping
+        fights = [(None, f) for f in soup.select(".c-listing-fight")]
 
     bouts = []
-    for f in fights:
+    for segment, f in fights:
         names = [_corner_name(f, c) for c in ("red", "blue")]
         cls_el = f.select_one(".c-listing-fight__class-text")
         cls = cls_el.get_text(" ", strip=True) if cls_el else ""
@@ -205,7 +208,7 @@ def parse_ufc_event_page(html: str, event: ScheduledEvent) -> Card:
         bouts.append(Bout(fighter_1=names[0], fighter_2=names[1],
                           weight_class=canonical_weight_class(cls) or (cls.removesuffix(" Bout") or None),
                           bout_order=order, is_title_fight=is_title,
-                          scheduled_rounds=5 if (order == 1 or is_title) else 3))
+                          scheduled_rounds=5 if (order == 1 or is_title) else 3, card_segment=segment))
     return Card(event_name=event_name, event_date=event.event_date, source="ufc.com", bouts=bouts,
                 location=event.location, event_url=event.url)
 
@@ -234,7 +237,7 @@ def card_to_json(card: Card, fetched_at: str) -> dict:
         "source": card.source, "event_url": card.event_url, "fetched_at": fetched_at,
         "bouts": [{"bout_order": b.bout_order, "weight_class": b.weight_class, "fighter_1": b.fighter_1,
                    "fighter_2": b.fighter_2, "is_title_fight": b.is_title_fight,
-                   "scheduled_rounds": b.scheduled_rounds} for b in card.bouts],
+                   "scheduled_rounds": b.scheduled_rounds, "card_segment": b.card_segment} for b in card.bouts],
         "changes": card.changes,
     }
 

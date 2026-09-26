@@ -149,6 +149,7 @@ def card_pairs(card: Card) -> pd.DataFrame:
             "weight_class": b.weight_class,
             "is_title_fight": float(b.is_title_fight or 0),
             "scheduled_rounds": float(b.scheduled_rounds or (5 if order == 1 else 3)),
+            "card_segment": b.card_segment,
         })
     return pd.DataFrame(rows)
 
@@ -185,9 +186,10 @@ def predict_card(card: Card, tables: dict[str, pd.DataFrame], artifact: dict,
         "fighter_1_debut": ab["f1_is_debut"].astype(int), "fighter_2_debut": ab["f2_is_debut"].astype(int),
         "key_factors": [key_factors_text(d, f1, f2) for d, f1, f2 in zip(drivers, pairs["fighter_1"], pairs["fighter_2"])],
         "scheduled_rounds": pairs["scheduled_rounds"].astype(int),
+        "card_segment": pairs["card_segment"],   # main/prelims/early_prelims, for the HTML grouping
         "_drivers": drivers,   # structured drivers for the HTML report (not written to CSV)
     })
-    return out[OUTPUT_COLUMNS + EXTRA_COLUMNS + ["scheduled_rounds", "_drivers"]]
+    return out[OUTPUT_COLUMNS + EXTRA_COLUMNS + ["scheduled_rounds", "card_segment", "_drivers"]]
 
 
 def format_table(pred: pd.DataFrame) -> str:
