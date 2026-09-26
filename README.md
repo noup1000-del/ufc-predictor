@@ -95,7 +95,7 @@ Options: `--card PATH` (predict a specific card JSON), `--force-train`, `--no-pr
 
 **Overriding a card:** put a hand-made card in `data/raw/upcoming_card.json` (format: `tests/fixtures/upcoming_card.example.json`); it takes precedence over ufc.com. **Name mismatches:** if the log reports a fighter without an ID who does have UFC fights (ufc.com and ufcstats sometimes spell names differently), add a verified line to `upcoming_aliases.csv`.
 
-**Scheduling:** a Monday results/tracking job and a Wednesday prediction job via Windows Task Scheduler (`scripts/run_pipeline.bat`), cron or GitHub Actions; see [`docs/scheduling.md`](docs/scheduling.md). The Pages workflow (`.github/workflows/pages.yml`) republishes the dashboard whenever files under `outputs/predictions/` change on `main`.
+**Scheduling:** a Monday results/tracking job and a Wednesday prediction job via Windows Task Scheduler (`scripts/run_pipeline.bat`), cron or GitHub Actions; see [`docs/scheduling.md`](docs/scheduling.md). The Pages workflow (`.github/workflows/pages.yml`) republishes the dashboard whenever files under `outputs/predictions/` change on `main`. When a card changes (replacements, cancellations), run `scripts\update_dashboard.bat`: it re-fetches and re-predicts every card, commits `outputs/predictions/` if anything changed, and pushes, which redeploys the site.
 
 ---
 

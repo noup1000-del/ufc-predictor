@@ -11,6 +11,13 @@ completed event within 1–3 days (commits land around 18:00 UTC). So there are 
 | Predictions | **Wednesday** evening | `run_pipeline.py --update` | Same as above (picks up results the source added late, no-op otherwise), then predicts the next card (fetched from ufc.com) |
 | Schedule overview (optional) | after the Wednesday job | `run_pipeline.py --predict-all` | Re-fetches the ufc.com schedule and predicts every announced card, plus `outputs/predictions/index.html` (~2 min: ufc.com asks for 15 s between requests) |
 
+**Card changed (replacement fighters, cancelled bouts)?** Run `scripts\update_dashboard.bat`
+(double-click it, or schedule it). It re-fetches every card from ufc.com, re-predicts them with
+the current model, commits `outputs/predictions/` only if something changed, and pushes to
+`main`; the push triggers the Pages workflow, and the site updates about a minute later. The
+"Deploy predictions to GitHub Pages" button in the Actions tab only republishes files that are
+already committed, so it never picks up card changes by itself.
+
 The next card comes from ufc.com/events and is synced to `data/raw/upcoming_card.json`, so
 there is no weekly manual step. To override it, write your own `upcoming_card.json`
 (format: `tests/fixtures/upcoming_card.example.json`); a hand-made file wins over ufc.com.
