@@ -156,7 +156,40 @@ def dashboard_entries(tables, artifact):
                                                          "predicted_winner", "confidence", "weight_class")})
         entry["event_name"] = name  # card() names the event itself; keep ours
         entries.append(entry)
+    entries[1]["fetched_at"] = "2030-01-01T00:00:00+00:00"
+    entries[1]["changes"] = [
+        {"detected_at": "2029-12-01T09:00:00+00:00", "replaced": [], "added": [["Old", "Bout"]], "removed": []},
+        {"detected_at": "2029-12-30T08:05:00+00:00", "added": [],
+         "replaced": [{"out": "Mickey <Gall>", "in": "Luis Hernandez", "opponent": "Sedriques Dumas"}],
+         "removed": [["Gone", "Fighter"]]},
+    ]
     return entries
+
+
+def test_dashboard_lists_card_changes_with_dates(tables, lgbm_artifact):
+    from src.report import render_index
+    html = render_index(dashboard_entries(tables, lgbm_artifact), lgbm_artifact["metadata"],
+                        generated="2030-01-01T00:00:00+00:00")
+    feed = html[html.index('<section class="updates"'):html.index("<main>")]
+    assert "Cards last checked with ufc.com: <b>Tue 01 Jan 2030, 00:00 UTC</b>" in feed
+    assert feed.index("Sun 30 Dec 2029, 08:05 UTC") < feed.index("Sat 01 Dec 2029, 09:00 UTC")   # newest first
+    assert '<a class="feed-event" href="#ufc-fight-night-ra-l-vs-o-brien">' in feed
+    assert "<b>Luis Hernandez</b> replaces <s>Mickey &lt;Gall&gt;</s> vs Sedriques Dumas" in feed   # escaped
+    assert "New bout</span><b>Old</b> vs <b>Bout</b>" in feed and "Off the card</span><s>Gone vs Fighter</s>" in feed
+    panel = html[html.index('id="ufc-fight-night-ra-l-vs-o-brien"'):html.index('id="ufc-999-later-card"')]
+    assert "Card changes (2)" in panel and "Card checked <b>Tue 01 Jan 2030, 00:00 UTC</b>" in panel
+    # only the recent change (< 7 days before generation) marks the tab
+    assert html.count('class="upd-dot"') == 1
+    assert re.search(r'id="tab-ufc-fight-night-ra-l-vs-o-brien".*?upd-dot', html)
+
+
+def test_dashboard_without_changes_says_so(tables, lgbm_artifact):
+    from src.report import render_index
+    entries = dashboard_entries(tables, lgbm_artifact)
+    for e in entries:
+        e["changes"] = []
+    html = render_index(entries, lgbm_artifact["metadata"], generated="2030-01-01T00:00:00+00:00")
+    assert "No line-up changes detected" in html and "upd-dot" not in html.split("</style>")[1]
 
 
 def test_dashboard_contains_every_event_and_the_tab_switcher(tables, lgbm_artifact):

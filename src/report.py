@@ -105,12 +105,40 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
   background: var(--pick); border-radius: 999px; padding: 2px 8px; vertical-align: 5px; margin-left: 10px; }
 .empty { color: var(--muted); background: var(--panel); border: 1px dashed var(--line); border-radius: 12px;
   padding: 24px 16px; text-align: center; }
+.updates { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  margin: 0 0 24px; }
+.updates-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px;
+  margin-bottom: 8px; }
+.updates h2 { margin: 0; font-size: 16px; }
+.checked { color: var(--muted); font-size: 12px; }
+.checked b { color: var(--text); font-weight: 600; }
+.feed { list-style: none; margin: 0; padding: 0; }
+.feed-row { display: grid; grid-template-columns: 190px 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.feed-row:first-child { border-top: 0; }
+.feed-when { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.feed-event { font-weight: 650; font-size: 14px; text-decoration: none; }
+.feed-event:hover { text-decoration: underline; }
+.feed-none { color: var(--muted); font-size: 13px; margin: 0; }
+.chg-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.chg-list s { color: var(--muted); }
+.chg { display: inline-block; min-width: 92px; margin-right: 8px; padding: 1px 7px; border-radius: 999px; font-size: 10px;
+  font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-align: center; border: 1px solid; }
+.chg.in { color: var(--pick); border-color: var(--pick); }
+.chg.add { color: #3fb950; border-color: #3fb950; }
+.chg.out { color: var(--f1); border-color: var(--f1); }
+.panel-changes { margin-top: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 12px; }
+.panel-changes summary { cursor: pointer; font-size: 13px; font-weight: 650; color: var(--pick); }
+.panel-changes .feed { margin-top: 6px; }
+.upd-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--pick);
+  margin-left: 6px; vertical-align: 1px; }
 @media (max-width: 720px) {
   .picker { display: block; }
   .tabs { display: none; }
   .brand .kicker { display: none; }
   .brand-title { font-size: 15px; }
   .event-panel { scroll-margin-top: 70px; }
+  .feed-row { grid-template-columns: 1fr; gap: 2px; }
   html:not(.js) .picker { display: none; }
   html:not(.js) .tabs { display: flex; }
 }
@@ -263,12 +291,80 @@ def _headliner_bar(h: dict) -> str:
             f'style="width:{100 * p1:.1f}%"></span><span class="seg f2" style="width:{100 * p2:.1f}%"></span></div>')
 
 
+RECENT_CHANGE_DAYS = 7    # tabs get an "updated" dot for changes this recent
+MAX_FEED_CHANGES = 12     # changes listed in the overview feed (newest first)
+
+
+def _when(iso: str | None) -> str:
+    """'2026-09-26T08:05:02+00:00' -> 'Sat 26 Sep 2026, 08:05 UTC' (source text if unparsable)."""
+    if not iso:
+        return "unknown"
+    try:
+        t = datetime.fromisoformat(str(iso)).astimezone(timezone.utc)
+    except ValueError:
+        return str(iso)
+    return t.strftime("%a %d %b %Y, %H:%M UTC")
+
+
+def _change_items(change: dict) -> str:
+    """<li> rows for one detected line-up change (see upcoming.diff_bouts)."""
+    rows = [f'<li><span class="chg in">Replacement</span><b>{escape(r["in"])}</b> replaces '
+            f'<s>{escape(r["out"])}</s> vs {escape(r["opponent"])}</li>' for r in change.get("replaced", [])]
+    rows += [f'<li><span class="chg add">New bout</span><b>{escape(a)}</b> vs <b>{escape(b)}</b></li>'
+             for a, b in change.get("added", [])]
+    rows += [f'<li><span class="chg out">Off the card</span><s>{escape(a)} vs {escape(b)}</s></li>'
+             for a, b in change.get("removed", [])]
+    return "".join(rows)
+
+
+def _is_recent(change: dict, now: datetime) -> bool:
+    try:
+        t = datetime.fromisoformat(str(change.get("detected_at")))
+    except ValueError:
+        return False
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=timezone.utc)
+    return (now - t).days < RECENT_CHANGE_DAYS
+
+
+def _changes_feed(entries: list[dict], slugs: list[str]) -> str:
+    """Overview block: latest line-up changes across all scheduled events + last check time."""
+    items = [(c.get("detected_at") or "", e, s, c) for e, s in zip(entries, slugs) for c in e.get("changes") or []]
+    items.sort(key=lambda x: x[0], reverse=True)
+    checked = max((e["fetched_at"] for e in entries if e.get("fetched_at")), default=None)
+    rows = "".join(
+        f'<li class="feed-row"><div class="feed-when">{escape(_when(when))}</div>'
+        f'<div><a class="feed-event" href="#{s}">{escape(e["event_name"])}</a>'
+        f'<ul class="chg-list">{_change_items(c)}</ul></div></li>'
+        for when, e, s, c in items[:MAX_FEED_CHANGES])
+    body = (f'<ul class="feed">{rows}</ul>' if rows else
+            '<p class="feed-none">No line-up changes detected since the cards were first fetched.</p>')
+    return f"""
+  <section class="updates" aria-labelledby="updates-h">
+    <div class="updates-head"><h2 id="updates-h">Card changes</h2>
+      <span class="checked">Cards last checked with ufc.com: <b>{escape(_when(checked))}</b></span></div>
+    {body}
+  </section>"""
+
+
+def _panel_changes(e: dict) -> str:
+    changes = sorted(e.get("changes") or [], key=lambda c: c.get("detected_at") or "", reverse=True)
+    if not changes:
+        return ""
+    rows = "".join(f'<li class="feed-row"><div class="feed-when">{escape(_when(c.get("detected_at")))}</div>'
+                   f'<ul class="chg-list">{_change_items(c)}</ul></li>' for c in changes)
+    return (f'<details class="panel-changes" open><summary>Card changes ({len(changes)})</summary>'
+            f'<ul class="feed">{rows}</ul></details>')
+
+
 def _panel(e: dict, slug: str, is_next: bool) -> str:
     d = date.fromisoformat(e["event_date"])
     facts = [f'<span>Date <b>{d.strftime("%A %d %B %Y")}</b></span>']
     if e.get("location"):
         facts.append(f'<span>Venue <b>{escape(e["location"])}</b></span>')
     facts.append(f"<span>{_bouts(e['bouts'])}</span>" if e["bouts"] else "<span>Card not announced yet</span>")
+    if e.get("fetched_at"):
+        facts.append(f'<span>Card checked <b>{escape(_when(e["fetched_at"]))}</b></span>')
     if e.get("unmatched"):
         facts.append(f'<span class="warn">{e["unmatched"]} fighter(s) not in UFC data (treated as debuts)</span>')
     if e.get("report"):
@@ -284,21 +380,26 @@ def _panel(e: dict, slug: str, is_next: bool) -> str:
   <header class="panel-head">
     <h2 id="h-{slug}">{escape(e["event_name"])}{label}</h2>
     <div class="meta">{"".join(facts)}</div>
+    {_panel_changes(e)}
   </header>
   {body}
 </section>"""
 
 
-def _tab(e: dict, slug: str, is_next: bool) -> str:
+def _tab(e: dict, slug: str, is_next: bool, now: datetime | None = None) -> str:
     d = date.fromisoformat(e["event_date"])
     badge = f'{d.strftime("%b")} {d.day}'
     h = e.get("headliner")
     sub = (f'<span class="tab-sub">{escape(h["fighter_1"])} vs {escape(h["fighter_2"])}</span>'
            if h else '<span class="tab-sub">Card TBA</span>')
+    now = now or datetime.now(timezone.utc)
+    updated = any(_is_recent(c, now) for c in e.get("changes") or [])
+    dot = ('<span class="upd-dot" title="Card changed in the last 7 days" '
+           'aria-label="card changed recently"></span>') if updated else ""
     return (f'<a class="tab{" next" if is_next else ""}" role="tab" id="tab-{slug}" href="#{slug}" '
             f'data-target="{slug}" aria-controls="{slug}">'
             f'<span class="tab-title">{escape(short_title(e["event_name"]))} '
-            f'<span class="date-badge">{badge}</span></span>{sub}</a>')
+            f'<span class="date-badge">{badge}</span>{dot}</span>{sub}</a>')
 
 
 def _option(e: dict, slug: str) -> str:
@@ -382,7 +483,8 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None) 
 
     `entries` come from predict.run_predict_all: event_name, event_date, location, bouts,
     report (standalone html file name or None), unmatched, headliner (main-event prediction or
-    None) and pred (predict_card output with `_drivers`, or None). Self-contained: embedded CSS
+    None), pred (predict_card output with `_drivers`, or None), fetched_at and changes (line-up
+    changes, see upcoming.diff_bouts). Self-contained: embedded CSS
     and one inline script, no external resources; everything still shows without JavaScript."""
     generated = generated or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     entries = sorted(entries, key=lambda e: (e["event_date"], e["event_name"]))
@@ -396,7 +498,10 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None) 
     next_i = next((i for i, e in enumerate(entries) if e.get("headliner")), 0 if entries else None)
     default = slugs[next_i] if next_i is not None else ""
 
-    tabs = "".join(_tab(e, s, i == next_i) for i, (e, s) in enumerate(zip(entries, slugs)))
+    now = datetime.fromisoformat(generated)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    tabs = "".join(_tab(e, s, i == next_i, now) for i, (e, s) in enumerate(zip(entries, slugs)))
     options = "".join(_option(e, s) for e, s in zip(entries, slugs))
     panels = "".join(_panel(e, s, i == next_i) for i, (e, s) in enumerate(zip(entries, slugs)))
     predicted = sum(1 for e in entries if e.get("headliner"))
@@ -423,7 +528,7 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None) 
     <span><b>{len(entries)}</b> scheduled events, <b>{predicted}</b> predicted, <b>{n_bouts}</b> bouts</span>
     <span>Model <b>{escape(str(meta.get("model_version", "")))}</b> ({escape(str(meta.get("model_type", "")))}, data to {escape(str(meta.get("data_cutoff", "")))})</span>
     <span>Generated <b>{escape(generated)}</b></span>
-  </div>
+  </div>{_changes_feed(entries, slugs)}
   <main>{panels}
   </main>
   <footer>

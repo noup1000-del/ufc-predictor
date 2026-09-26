@@ -169,3 +169,44 @@ def test_committed_aliases_file_is_well_formed():
     path = Path(__file__).parents[1] / "upcoming_aliases.csv"
     aliases = load_aliases(path)
     assert aliases and all(len(fid) == 16 for fid in aliases.values())
+
+
+# --------------------------------------------------------------------------- line-up changes
+
+from src.upcoming import describe_change, diff_bouts  # noqa: E402
+
+
+def test_diff_bouts_replacement_added_removed():
+    old = [("Raul Rosas Jr.", "Raoni Barcelos"), ("Mickey Gall", "Sedriques Dumas"), ("A One", "B Two")]
+    new = [("Raoni Barcelos", "Raúl Rosas Jr"),              # corner swap + spelling: not a change
+           ("Luis Hernandez", "Sedriques Dumas"),            # Gall out, Hernandez in
+           ("Kyle Nelson", "Cristian Perez Gonzalez")]       # new bout; A One vs B Two is gone
+    change = diff_bouts(old, new)
+    assert change == {"replaced": [{"out": "Mickey Gall", "in": "Luis Hernandez", "opponent": "Sedriques Dumas"}],
+                      "added": [["Kyle Nelson", "Cristian Perez Gonzalez"]],
+                      "removed": [["A One", "B Two"]]}
+    assert describe_change(change) == ("Luis Hernandez replaces Mickey Gall (vs Sedriques Dumas); "
+                                       "added Kyle Nelson vs Cristian Perez Gonzalez; removed A One vs B Two")
+    assert diff_bouts(old, old) is None
+
+
+def test_save_cards_records_changes_and_keeps_history(tmp_path):
+    cards_dir, manual = tmp_path / "cards", tmp_path / "upcoming_card.json"
+    today = date(2026, 12, 1)
+    v1 = ufc_card("UFC 340: X vs Y", "2026-12-12", "u340", bouts=2)
+    save_cards([v1], cards_dir, manual, today, fetched_at="2026-12-01T10:00:00+00:00")
+    assert load_manual_card(cards_dir / card_filename(v1), today).changes == []   # first fetch: no change
+
+    v2 = ufc_card("UFC 340: X vs Y", "2026-12-12", "u340", bouts=2)
+    v2.bouts[1] = Bout("A1", "New Guy", "Lightweight", 2)                     # B1 replaced by New Guy
+    save_cards([v2], cards_dir, manual, today, fetched_at="2026-12-02T10:00:00+00:00")
+    v3 = ufc_card("UFC 340: X vs Z", "2026-12-12", "u340", bouts=1)            # headliner renamed, bout 2 gone
+    save_cards([v3], cards_dir, manual, today, fetched_at="2026-12-03T10:00:00+00:00")
+    save_cards([v3], cards_dir, manual, today, fetched_at="2026-12-04T10:00:00+00:00")   # unchanged
+
+    card = load_manual_card(cards_dir / card_filename(v3), today)
+    assert [c["detected_at"][:10] for c in card.changes] == ["2026-12-02", "2026-12-03"]
+    assert card.changes[0]["replaced"] == [{"out": "B1", "in": "New Guy", "opponent": "A1"}]
+    assert card.changes[1]["removed"] == [["A1", "New Guy"]]
+    assert card.fetched_at == "2026-12-04T10:00:00+00:00"
+    assert json.loads(manual.read_text(encoding="utf-8"))["changes"] == card.changes   # synced card too

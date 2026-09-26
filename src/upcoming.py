@@ -58,6 +58,9 @@ class Card:
     bouts: list[Bout] = field(default_factory=list)
     location: str | None = None
     event_url: str | None = None
+    fetched_at: str | None = None   # when the card was last read from the source (UTC ISO)
+    # Line-up changes seen between fetches, oldest first (see `diff_bouts`), each with `detected_at`.
+    changes: list[dict] = field(default_factory=list)
 
     def unmatched(self) -> list[str]:
         out = []
@@ -102,7 +105,8 @@ def load_manual_card(path: Path, today: date) -> Card | None:
         return None
     return Card(event_name=data.get("event_name", "Manual card"), event_date=event_date.isoformat(),
                 source=data.get("source") or "manual", bouts=bouts, location=data.get("location"),
-                event_url=data.get("event_url"))
+                event_url=data.get("event_url"), fetched_at=data.get("fetched_at"),
+                changes=list(data.get("changes") or []))
 
 
 # --------------------------------------------------------------------------- ufc.com
@@ -231,7 +235,49 @@ def card_to_json(card: Card, fetched_at: str) -> dict:
         "bouts": [{"bout_order": b.bout_order, "weight_class": b.weight_class, "fighter_1": b.fighter_1,
                    "fighter_2": b.fighter_2, "is_title_fight": b.is_title_fight,
                    "scheduled_rounds": b.scheduled_rounds} for b in card.bouts],
+        "changes": card.changes,
     }
+
+
+def diff_bouts(old: list[tuple[str, str]], new: list[tuple[str, str]]) -> dict | None:
+    """Line-up change between two versions of a card, or None if the bouts are the same.
+
+    Bouts are compared as unordered pairs of normalised names, so corner swaps, re-ordering and
+    accent/punctuation changes are not changes. A removed and an added bout that share exactly
+    one fighter are reported as a replacement ({"out", "in", "opponent"}); the rest as
+    "added"/"removed" bouts ([fighter_1, fighter_2], display names as ufc.com shows them)."""
+    def keyed(pairs):
+        return {tuple(sorted((normalize_name(a), normalize_name(b)))): (a, b) for a, b in pairs}
+
+    before, after = keyed(old), keyed(new)
+    removed = [k for k in before if k not in after]
+    added = [k for k in after if k not in before]
+    replaced = []
+    for r in list(removed):
+        for a in added:
+            common = set(r) & set(a)
+            if len(common) != 1:
+                continue
+            (stay,) = common
+            out_name = next(n for n in before[r] if normalize_name(n) != stay)
+            in_name = next(n for n in after[a] if normalize_name(n) != stay)
+            opponent = next(n for n in after[a] if normalize_name(n) == stay)
+            replaced.append({"out": out_name, "in": in_name, "opponent": opponent})
+            removed.remove(r)
+            added.remove(a)
+            break
+    if not (removed or added or replaced):
+        return None
+    return {"replaced": replaced, "added": [list(after[k]) for k in added],
+            "removed": [list(before[k]) for k in removed]}
+
+
+def describe_change(change: dict) -> str:
+    """One line of text for a `diff_bouts` result (logs and console)."""
+    parts = [f"{r['in']} replaces {r['out']} (vs {r['opponent']})" for r in change.get("replaced", [])]
+    parts += [f"added {a} vs {b}" for a, b in change.get("added", [])]
+    parts += [f"removed {a} vs {b}" for a, b in change.get("removed", [])]
+    return "; ".join(parts)
 
 
 def card_filename(card: Card) -> str:
@@ -284,15 +330,30 @@ def save_cards(cards: list[Card], cards_dir: Path, manual_card_file: Path, today
       moved); hand-made files and past cards are never touched.
     - `manual_card_file` gets the earliest card with bouts. A hand-made file there (no
       `"source": "ufc.com"`) is first moved to a timestamped backup next to it.
+    - Line-up changes against the previous file for the same event (`diff_bouts`) are appended
+      to the card's `changes`, stamped `detected_at = fetched_at`; earlier changes are kept.
     """
     fetched_at = fetched_at or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     cards_dir.mkdir(parents=True, exist_ok=True)
     keep = {card_filename(c) for c in cards}
     urls = {c.event_url for c in cards}
-    for path in sorted(cards_dir.glob("*.json")):
+    existing = {p: _read_json(p) for p in sorted(cards_dir.glob("*.json"))}
+    previous = {d.get("event_url"): d for d in existing.values()
+                if d is not None and d.get("source") == "ufc.com" and d.get("event_url")}
+    for c in cards:
+        old = previous.get(c.event_url)
+        if old is None:
+            continue
+        c.changes = list(old.get("changes") or [])
+        change = diff_bouts([(b["fighter_1"], b["fighter_2"]) for b in old.get("bouts") or []],
+                            [(b.fighter_1, b.fighter_2) for b in c.bouts])
+        if change:
+            c.changes.append({"detected_at": fetched_at, **change})
+            logger.warning("Card change for %s: %s", c.event_name, describe_change(change))
+
+    for path, old in existing.items():
         if path.name in keep:
             continue
-        old = _read_json(path)
         if old is None or old.get("source") != "ufc.com":
             continue
         if old.get("event_url") in urls:

@@ -282,7 +282,8 @@ def run_predict_all(fetch: bool = True) -> list[dict]:
     for card_file, card in scheduled:
         entry = {"event_name": card.event_name, "event_date": card.event_date, "location": card.location,
                  "event_url": card.event_url, "card_file": card_file.name, "bouts": len(card.bouts),
-                 "report": None, "headliner": None, "unmatched": 0, "pred": None}
+                 "report": None, "headliner": None, "unmatched": 0, "pred": None,
+                 "changes": card.changes, "fetched_at": card.fetched_at}
         if card.bouts:
             card = match_card(card, matcher, aliases)
             pred, path = _predict_and_write(card, tables, artifact, out_dir, index_link=True)
