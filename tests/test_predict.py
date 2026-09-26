@@ -227,8 +227,8 @@ def test_dashboard_contains_every_event_and_the_tab_switcher(tables, lgbm_artifa
     ids = re.findall(r'<section class="event-panel" id="([a-z0-9-]+)"', html)
     assert ids == ["ufc-fight-night-ra-l-vs-o-brien", "ufc-999-later-card", "ufc-fight-night-card-tba"]  # by date
     tab_ids = re.findall(r'<a class="tab[^"]*" role="tab" id="tab-([a-z0-9-]+)" href="#\1" data-target="\1"', html)
-    assert tab_ids == ["card-changes"] + ids                                                # changes tab first
-    assert re.findall(r'<option value="([a-z0-9-]+)">', html) == ids + ["card-changes"]    # mobile <select>
+    assert tab_ids == ["results", "card-changes"] + ids                                     # results, changes first
+    assert re.findall(r'<option value="([a-z0-9-]+)">', html) == ids + ["results", "card-changes"]  # mobile <select>
     assert re.findall(r'<section class="event-panel changes-panel" id="([a-z0-9-]+)"', html) == ["card-changes"]
     assert '<html lang="en" data-default="ufc-fight-night-ra-l-vs-o-brien">' in html      # next card with bouts
     assert "UFC 999 <span class=\"date-badge\">Feb 1</span>" in html                     # short title + date badge

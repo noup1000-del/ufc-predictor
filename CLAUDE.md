@@ -49,8 +49,9 @@ ufc-predictor/
 ├── models/                 # trained model + metadata (date trained, metrics, feature list)
 ├── outputs/
 │   ├── predictions/        # <event_date>_<event_slug>.csv/.html + index.html (schedule overview)
-│   └── tracking/
-│       └── results_log.csv # every prediction + actual outcome once known
+│   ├── tracking/
+│   │   └── results_log.csv # every prediction + actual outcome once known
+│   └── reviews/            # <event_date>_<event_slug>.json post-event reviews + evidence.json
 ├── src/
 │   ├── __init__.py
 │   ├── config.py           # loads config.yaml, resolves project paths
@@ -63,7 +64,8 @@ ufc-predictor/
 │   ├── train.py
 │   ├── predict.py
 │   ├── report.py           # self-contained HTML card report (used by predict.py)
-│   └── track.py
+│   ├── track.py
+│   └── review.py           # post-event review (lessons learned) + evidence board
 ├── tests/
 └── notebooks/              # exploration only; pipeline must not depend on these
 ```
@@ -213,10 +215,18 @@ Implementation notes (src/features.py):
 - Matching is by fighter IDs: the same unordered pair (card order may differ from the source), `event_date` within ±1 day (ESPN dates are UTC). If one side had no ID (debut), the known fighter's fight on that date is used. Never by names.
 - Idempotent: one row per `fight_id`, existing rows are never rewritten. If several prediction files cover a fight, the latest pre-fight prediction is used; predictions made more than a day after the event are ignored. Draws/NCs are logged with empty `correct` and excluded from metrics.
 
+## Stage 7: review.py (lessons learned)
+
+- Runs after `track` (in `--update`, and `--stage review`). For every event in `results_log.csv` it writes `outputs/reviews/<event_date>_<event_slug>.json`: per-bout scorecard (pick, probability, actual winner, method/round, surprise level of a miss: < 55% coin flip, < 65% lean, else clear favourite; the model's own key factors for the pick; debutant and late-line-up-change flags) and rule-based lessons (hits vs the model's own expected hits = sum of pick probabilities, with the normal spread; upsets ≥ 65% with what the pick rested on; coin-flip misses; debut / late-change / finish breakdowns). Lessons describe what the model relied on; they never claim why a fight was won.
+- The prediction row used for a fight is found by fighter IDs within the logged prediction file (`track.match_predictions`), never by names. Late changes come from the card JSON's `changes` (names looked up inside that card only).
+- **Evidence board** (`outputs/reviews/evidence.json`), over all reviewed fights: per segment (pick confidence, debutant, late change, how the fight ended, scheduled rounds, men/women) hit rate vs expected hit rate with a 95% Wilson interval. A segment is flagged (`overconfident` / `underconfident`) only with ≥ `MIN_EVIDENCE_FIGHTS` (30) fights **and** an interval that excludes the expectation; otherwise `collecting` or `consistent`.
+- **Model changes follow evidence, not single events:** never change features or parameters because of one card. Propose a change only for a flagged segment, and it must pass the walk-forward backtest and promotion gate (Stage 4) before it becomes `latest.pkl`. Weekly retraining on new fights is the only automatic update.
+- The dashboard's first tab, "Results", shows the reviews (newest first, last 10 events) and the evidence board. `scripts/after_event.bat` = `--update --no-predict` (results, tracking, review, retrain) followed by `update_dashboard.bat` (which commits all of `outputs/`).
+
 ## run_pipeline.py
 
 ```
-python run_pipeline.py --update     # default: ingest new → clean → features → track → train → predict
+python run_pipeline.py --update     # default: ingest new → clean → features → track → review → train → predict
 python run_pipeline.py --full       # rebuild everything from the cached source (no re-downloading)
 python run_pipeline.py --predict-only
 python run_pipeline.py --stage features   # run a single stage
@@ -236,6 +246,7 @@ Scheduling (weekly Monday results/tracking job + Wednesday prediction job, Windo
 - Idempotency test: running the ingest's merge step twice doesn't add rows.
 - Ingest tests: outcome → winner mapping, round aggregation, renamed-event duplicates, same-name disambiguation, overrides.
 - Matching tests: normalisation, fuzzy thresholds, ambiguity handling.
+- Review tests: scorecard joins by IDs, debut/late-change flags, lessons, evidence-board thresholds, Results tab.
 - ufc.com schedule tests: events-list/event-page parsing, year from timestamp, card-file replacement and sync, aliases, per-host crawl delay.
 - Use saved fixtures in `tests/fixtures/` (excerpts of the Greco1899 CSVs, ESPN JSON, synthetic ufc.com HTML), not live requests.
 

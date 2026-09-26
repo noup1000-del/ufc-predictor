@@ -57,6 +57,7 @@ Every training run passes a promotion gate that includes a walk-forward backtest
 | Train | `src/train.py` | Time-based splits only, three models side by side, fold isolation (`FoldLeakError`), missingness report, leakage flag for dominant features, promotion gate (provenance + backtest + full test suite) before `models/latest.pkl` changes. |
 | Predict | `src/predict.py`, `src/upcoming.py`, `src/report.py` | Next card or every scheduled card, symmetric probabilities `p = (p(A,B) + 1 − p(B,A)) / 2`, top-3 drivers per fighter, CSV + standalone HTML per card, tabbed dashboard. Unmatched names are shown as debuts, never guessed. |
 | Track | `src/track.py` | Joins finished fights to saved predictions by fighter ID and date and appends to `outputs/tracking/results_log.csv` with running accuracy and Brier score. |
+| Review | `src/review.py` | Post-event lessons learned per card (scorecard, upsets, what the model relied on, debut/late-change breakdowns) and an evidence board that flags a weakness only with 30+ fights and a significant gap. Model changes follow that evidence and the backtest, never a single card. |
 
 `CLAUDE.md` is the full specification (schemas, leakage rules, data-source rules) and is kept in sync with the code.
 
@@ -95,7 +96,7 @@ Options: `--card PATH` (predict a specific card JSON), `--force-train`, `--no-pr
 
 **Overriding a card:** put a hand-made card in `data/raw/upcoming_card.json` (format: `tests/fixtures/upcoming_card.example.json`); it takes precedence over ufc.com. **Name mismatches:** if the log reports a fighter without an ID who does have UFC fights (ufc.com and ufcstats sometimes spell names differently), add a verified line to `upcoming_aliases.csv`.
 
-**Scheduling:** a Monday results/tracking job and a Wednesday prediction job via Windows Task Scheduler (`scripts/run_pipeline.bat`), cron or GitHub Actions; see [`docs/scheduling.md`](docs/scheduling.md). The Pages workflow (`.github/workflows/pages.yml`) republishes the dashboard whenever files under `outputs/predictions/` change on `main`. When a card changes (replacements, cancellations), run `scripts\update_dashboard.bat`: it re-fetches and re-predicts every card, commits `outputs/predictions/` if anything changed, and pushes, which redeploys the site.
+**Scheduling:** a Monday results/tracking job and a Wednesday prediction job via Windows Task Scheduler (`scripts/run_pipeline.bat`), cron or GitHub Actions; see [`docs/scheduling.md`](docs/scheduling.md). The Pages workflow (`.github/workflows/pages.yml`) republishes the dashboard whenever files under `outputs/predictions/` change on `main`. After an event, `scripts\after_event.bat` imports the results, grades the picks, writes a review with lessons learned (the dashboard's "Results" tab, with an evidence board that only flags a pattern after 30+ fights) and republishes. When a card changes (replacements, cancellations), run `scripts\update_dashboard.bat`: it re-fetches and re-predicts every card, commits `outputs/predictions/` if anything changed, and pushes, which redeploys the site.
 
 ---
 

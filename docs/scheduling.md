@@ -11,6 +11,13 @@ completed event within 1–3 days (commits land around 18:00 UTC). So there are 
 | Predictions | **Wednesday** evening | `run_pipeline.py --update` | Same as above (picks up results the source added late, no-op otherwise), then predicts the next card (fetched from ufc.com) |
 | Schedule overview (optional) | after the Wednesday job | `run_pipeline.py --predict-all` | Re-fetches the ufc.com schedule and predicts every announced card, plus `outputs/predictions/index.html` (~2 min: ufc.com asks for 15 s between requests) |
 
+**After an event:** run `scripts\after_event.bat` once the results are in the data (usually
+within two days; the Monday job timing is fine). It imports the results, grades our picks,
+writes the review ("lessons learned") and retrains, then publishes the dashboard with the new
+"Results" tab entry. If the results are not in the data yet, the review is simply unchanged;
+run it again later. One card never changes the model: the evidence board on the Results tab
+flags a pattern only after 30+ fights, and any model change still has to pass the backtest.
+
 **Card changed (replacement fighters, cancelled bouts)?** Run `scripts\update_dashboard.bat`
 (double-click it, or schedule it). It re-fetches every card from ufc.com, re-predicts them with
 the current model, commits `outputs/predictions/` only if something changed, and pushes to

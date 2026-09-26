@@ -26,14 +26,14 @@ def recorder(monkeypatch):
 def test_update_runs_all_stages_in_order(recorder):
     calls, _, _ = recorder
     assert rp.main([]) == 0
-    assert [c[0] for c in calls] == ["ingest", "clean", "features", "track", "train", "predict"]
+    assert [c[0] for c in calls] == ["ingest", "clean", "features", "track", "review", "train", "predict"]
     assert all(not full and not force for _, full, force in calls)
 
 
 def test_full_mode_rebuilds_and_forces_training(recorder):
     calls, _, _ = recorder
     assert rp.main(["--full"]) == 0
-    assert len(calls) == 6 and all(full and force for _, full, force in calls)
+    assert len(calls) == 7 and all(full and force for _, full, force in calls)
 
 
 def test_predict_only_and_single_stage(recorder):
@@ -65,7 +65,7 @@ def test_predict_all_runs_only_the_multi_card_stage(recorder):
 def test_no_predict_stops_after_train(recorder):
     calls, _, _ = recorder
     assert rp.main(["--update", "--no-predict"]) == 0
-    assert [c[0] for c in calls] == ["ingest", "clean", "features", "track", "train"]
+    assert [c[0] for c in calls] == ["ingest", "clean", "features", "track", "review", "train"]
 
 
 def test_failure_stops_pipeline_with_nonzero_exit(recorder):

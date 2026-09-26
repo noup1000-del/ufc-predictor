@@ -112,6 +112,36 @@ html:not(.js) .event-panel + .event-panel { margin-top: 40px; padding-top: 24px;
 .seg-title span { color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: none; font-size: 12px; }
 .seg-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .panel-head + .seg-title { margin-top: 6px; }
+.review { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  margin-bottom: 16px; }
+.review header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.review h3 { margin: 0; font-size: 17px; }
+.review-score { margin-left: auto; font-size: 13px; color: var(--muted); }
+.review h4 { margin: 12px 0 6px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.lessons { margin: 0 0 12px; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.table-wrap { overflow-x: auto; }
+table.scorecard, table.evidence { width: 100%; border-collapse: collapse; font-size: 13px; }
+.scorecard th, .evidence th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .06em; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.scorecard td, .evidence td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.scorecard .vs, .scorecard .p, .scorecard .method, .why .order { color: var(--muted); }
+.scorecard .method { display: block; font-size: 12px; }
+.why { margin-top: 4px; font-size: 12px; color: var(--muted); }
+.res { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; }
+.res.ok { background: #3fb950; color: #04260f; }
+.res.miss { background: var(--f1); color: #2b0806; }
+.res.none { border: 1px solid var(--line); color: var(--muted); }
+.surprise { display: block; margin-top: 3px; font-size: 11px; color: var(--muted); }
+.flag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; border: 1px solid; vertical-align: 1px; }
+.flag.debut { color: var(--debut); }
+.flag.late { color: var(--pick); }
+.note { color: var(--muted); font-size: 13px; margin: 0 0 10px; max-width: 900px; }
+.evidence tr.ev-overconfident td:last-child, .evidence tr.ev-underconfident td:last-child { color: var(--f1); font-weight: 650; }
+.evidence tr.ev-consistent td:last-child { color: #3fb950; }
+.evidence tr.ev-collecting td:last-child { color: var(--muted); }
 .tab-changes { border-style: dashed; }
 .tab-changes.active { border-style: solid; }
 .count-badge { display: inline-block; min-width: 18px; margin-left: 4px; padding: 0 6px; border-radius: 999px;
@@ -390,6 +420,120 @@ def _changes_view(entries: list[dict], slugs: list[str]) -> tuple[str, str, str]
     return tab, option, panel
 
 
+RESULTS_ID = "results"   # id/anchor of the "Results" tab (post-event reviews + evidence board)
+MAX_REVIEWED_EVENTS = 10
+
+
+def _pct0(v) -> str:
+    return "n/a" if v is None else f"{100 * float(v):.0f}%"
+
+
+def _method_text(b: dict) -> str:
+    labels = {"ko_tko": "KO/TKO", "submission": "Submission", "decision": "Decision", "dq": "DQ", "other": "Other"}
+    m = labels.get(b.get("method_group") or "", "")
+    if not m:
+        return ""
+    return m if m == "Decision" or not b.get("end_round") else f"{m}, R{b['end_round']}"
+
+
+def _scorecard(bouts: list[dict]) -> str:
+    rows = []
+    for b in bouts:
+        if b.get("correct") is True:
+            mark = '<span class="res ok">Hit</span>'
+        elif b.get("correct") is False:
+            mark = f'<span class="res miss">Miss</span><span class="surprise">{escape(b.get("surprise") or "")}</span>'
+        else:
+            mark = f'<span class="res none">{escape((b.get("result") or "").upper() or "n/a")}</span>'
+        flags = []
+        if b.get("debut"):
+            flags.append('<span class="flag debut">Debut</span>')
+        if b.get("late_change"):
+            flags.append('<span class="flag late">Late change</span>')
+        why = ""
+        if b.get("correct") is False and b.get("pick_factors"):
+            why = (f'<div class="why">Favoured {escape(b["pick"])} on: '
+                   f'{escape("; ".join(b["pick_factors"][:3]))} '
+                   f'<span class="order">({escape(b["fighter_1"])} vs {escape(b["fighter_2"])})</span></div>')
+        rows.append(
+            f'<tr><td class="num">{b.get("bout_order") or ""}</td>'
+            f'<td>{escape(b["fighter_1"])} <span class="vs">vs</span> {escape(b["fighter_2"])}{"".join(flags)}{why}</td>'
+            f'<td><b>{escape(b["pick"])}</b> <span class="p">{_pct0(b.get("p_pick"))}</span></td>'
+            f'<td>{escape(str(b.get("actual_winner") or ""))}<span class="method">{escape(_method_text(b))}</span></td>'
+            f'<td>{mark}</td></tr>')
+    return ('<div class="table-wrap"><table class="scorecard"><thead><tr><th>#</th><th>Bout</th><th>Our pick</th>'
+            '<th>Winner</th><th>Result</th></tr></thead><tbody>' + "".join(rows) + "</tbody></table></div>")
+
+
+def _evidence_table(board: dict) -> str:
+    segs = board.get("segments") or []
+    if not segs:
+        return ""
+    rows = "".join(
+        f'<tr class="ev-{escape(g["status"])}"><td>{escape(g["segment"])}</td><td>{escape(g["value"])}</td>'
+        f'<td class="num">{g["fights"]}</td><td class="num">{_pct0(g["accuracy"])}</td>'
+        f'<td class="num">{_pct0(g["expected_accuracy"])}</td>'
+        f'<td class="num">{_pct0(g["ci_low"])}&ndash;{_pct0(g["ci_high"])}</td>'
+        f'<td>{escape(g["verdict"])}</td></tr>' for g in segs)
+    return ('<div class="table-wrap"><table class="evidence"><thead><tr><th>Segment</th><th>Group</th><th>Fights</th>'
+            '<th>Hit rate</th><th>Expected</th><th>95% range</th><th>Verdict</th></tr></thead><tbody>'
+            + rows + "</tbody></table></div>")
+
+
+def _results_view(reviews: list[dict] | None, board: dict | None, first_upcoming: str | None) -> tuple[str, str, str]:
+    """The "Results" tab: (tab link, <option>, panel) with the post-event reviews (newest first)
+    and the evidence board across all tracked fights."""
+    reviews = sorted(reviews or [], key=lambda r: r["event_date"], reverse=True)[:MAX_REVIEWED_EVENTS]
+    o = (board or {}).get("overall") or {}
+    if o.get("fights"):
+        record = (f'<span>Tracked picks <b>{o["correct"]} of {o["fights"]}</b> ({_pct0(o["accuracy"])}) over '
+                  f'<b>{board.get("events", len(reviews))}</b> event(s)</span>'
+                  f'<span>Model expected <b>{o["expected_correct"]:.1f}</b> ({_pct0(o["expected_accuracy"])})</span>'
+                  f'<span>Brier <b>{o["brier"]:.3f}</b></span>')
+        sub = f'{o["correct"]}/{o["fights"]} picks'
+    else:
+        record = "<span>No finished events tracked yet.</span>"
+        sub = "Coming soon"
+    events_html = []
+    for r in reviews:
+        s = r.get("summary") or {}
+        head = (f'{s["correct"]} of {s["fights"]} correct ({_pct0(s["accuracy"])}) &middot; model expected '
+                f'{s["expected_correct"]:.1f}' if s.get("fights") else "Not scored")
+        lessons = "".join(f"<li>{escape(x)}</li>" for x in r.get("lessons") or [])
+        events_html.append(f"""
+  <article class="review">
+    <header><h3>{escape(r["event_name"])}</h3><span class="feed-date">{_short_date(r["event_date"])} {r["event_date"][:4]}</span>
+      <span class="review-score">{head}</span></header>
+    <h4>Lessons</h4><ul class="lessons">{lessons}</ul>
+    {_scorecard(r.get("bouts") or [])}
+  </article>""")
+    if not events_html:
+        nxt = f" The first review will be for {escape(first_upcoming)}." if first_upcoming else ""
+        events_html.append(f'<p class="feed-none">Results appear here once a predicted event is over and its '
+                           f'results are in the data (usually within two days).{nxt}</p>')
+    evidence = _evidence_table(board or {})
+    min_n = (board or {}).get("min_fights", 30)
+    tab = (f'<a class="tab tab-changes" role="tab" id="tab-{RESULTS_ID}" href="#{RESULTS_ID}" '
+           f'data-target="{RESULTS_ID}" aria-controls="{RESULTS_ID}">'
+           f'<span class="tab-title">Results</span><span class="tab-sub">{escape(sub)}</span></a>')
+    option = f'<option value="{RESULTS_ID}">Results ({escape(sub)})</option>'
+    panel = f"""
+<section class="event-panel results-panel" id="{RESULTS_ID}" data-title="Results" aria-labelledby="h-{RESULTS_ID}">
+  <header class="panel-head">
+    <h2 id="h-{RESULTS_ID}">Results &amp; lessons learned</h2>
+    <div class="meta">{record}</div>
+  </header>
+  {"".join(events_html)}
+  <h3 class="seg-title">Evidence board <span>all tracked fights</span></h3>
+  <p class="note">Hit rate compared with what the model itself expected (its average confidence) for each group.
+    A group is only flagged once it has at least {min_n} fights and the 95% range of its hit rate excludes the
+    expectation; until then it is &ldquo;collecting evidence&rdquo;. Model changes are only made for flagged
+    groups, and only if they also pass the walk-forward backtest on past seasons.</p>
+  {evidence or '<p class="feed-none">No tracked fights yet.</p>'}
+</section>"""
+    return tab, option, panel
+
+
 def _panel_changes(e: dict) -> str:
     changes = sorted(e.get("changes") or [], key=lambda c: c.get("detected_at") or "", reverse=True)
     if not changes:
@@ -519,7 +663,8 @@ DASHBOARD_JS = """
 """
 
 
-def render_index(entries: list[dict], meta: dict, generated: str | None = None) -> str:
+def render_index(entries: list[dict], meta: dict, generated: str | None = None,
+                 reviews: list[dict] | None = None, board: dict | None = None) -> str:
     """Single-file dashboard of every scheduled card: event tabs (a <select> on narrow
     screens), one `<section class="event-panel" id="<event_slug>">` per event with all bout
     cards, `#<event_slug>` deep links, default = the next event with bouts.
@@ -527,7 +672,8 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None) 
     `entries` come from predict.run_predict_all: event_name, event_date, location, bouts,
     report (standalone html file name or None), unmatched, headliner (main-event prediction or
     None), pred (predict_card output with `_drivers`, or None), fetched_at and changes (line-up
-    changes, see upcoming.diff_bouts). Self-contained: embedded CSS
+    changes, see upcoming.diff_bouts). `reviews`/`board` are review.load_reviews() output for the
+    Results tab. Self-contained: embedded CSS
     and one inline script, no external resources; everything still shows without JavaScript."""
     generated = generated or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     entries = sorted(entries, key=lambda e: (e["event_date"], e["event_name"]))
@@ -545,9 +691,12 @@ def render_index(entries: list[dict], meta: dict, generated: str | None = None) 
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
     ch_tab, ch_option, ch_panel = _changes_view(entries, slugs)
-    tabs = ch_tab + "".join(_tab(e, s, i == next_i, now) for i, (e, s) in enumerate(zip(entries, slugs)))
-    options = "".join(_option(e, s) for e, s in zip(entries, slugs)) + ch_option
-    panels = "".join(_panel(e, s, i == next_i) for i, (e, s) in enumerate(zip(entries, slugs))) + ch_panel
+    first = entries[next_i]["event_name"] if next_i is not None else None
+    rs_tab, rs_option, rs_panel = _results_view(reviews, board, first)
+    tabs = rs_tab + ch_tab + "".join(_tab(e, s, i == next_i, now) for i, (e, s) in enumerate(zip(entries, slugs)))
+    options = "".join(_option(e, s) for e, s in zip(entries, slugs)) + rs_option + ch_option
+    panels = ("".join(_panel(e, s, i == next_i) for i, (e, s) in enumerate(zip(entries, slugs)))
+              + rs_panel + ch_panel)
     predicted = sum(1 for e in entries if e.get("headliner"))
     n_bouts = sum(len(e["pred"]) for e in entries if e.get("pred") is not None)
     return f"""<!doctype html>

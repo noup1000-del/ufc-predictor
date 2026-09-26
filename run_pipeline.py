@@ -1,10 +1,10 @@
 """Run the UFC predictor pipeline.
 
-    python run_pipeline.py [--update]        ingest new -> clean -> features -> track -> train (if needed) -> predict
+    python run_pipeline.py [--update]        ingest new -> clean -> features -> track -> review -> train (if needed) -> predict
     python run_pipeline.py --full            rebuild from the cached source (no downloads), always retrain
     python run_pipeline.py --predict-only
     python run_pipeline.py --predict-all     fetch the ufc.com schedule, predict every card, write index.html
-    python run_pipeline.py --stage features  one stage (ingest|clean|features|track|train|predict|backtest)
+    python run_pipeline.py --stage features  one stage (ingest|clean|features|track|review|train|predict|backtest)
     python run_pipeline.py --backtest        walk-forward backtest -> models/backtest_report.json
     python run_pipeline.py --dry-run         show the plan without running anything
 
@@ -27,7 +27,7 @@ from src.config import load_config, resolve_path
 
 logger = logging.getLogger("pipeline")
 
-STAGES = ["ingest", "clean", "features", "track", "train", "predict"]
+STAGES = ["ingest", "clean", "features", "track", "review", "train", "predict"]
 # Validation findings that are known properties of the source, not failures.
 INGEST_NONFATAL_CHECKS = {"fights with 0 stat rows (no stats in source)"}
 
@@ -79,6 +79,11 @@ def stage_track(ctx: Context) -> dict:
     m = (r.get("metrics") or {}).get("overall") or {}
     return {"new_rows": r["added"], "log_rows": r.get("log_rows", 0), "tracked_fights": m.get("fights", 0),
             "accuracy": m.get("accuracy")}
+
+
+def stage_review(ctx: Context) -> dict:
+    from src import review
+    return review.run_review()
 
 
 def training_needed(cfg: dict) -> tuple[bool, str]:
@@ -141,7 +146,7 @@ def stage_predict(ctx: Context) -> dict:
 
 
 STAGE_FUNCS = {"ingest": stage_ingest, "clean": stage_clean, "features": stage_features,
-               "track": stage_track, "train": stage_train, "predict": stage_predict,
+               "track": stage_track, "review": stage_review, "train": stage_train, "predict": stage_predict,
                "backtest": stage_backtest, "predict_all": stage_predict_all}  # backtest also runs inside train (promotion gate)
 
 

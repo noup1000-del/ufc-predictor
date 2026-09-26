@@ -6,6 +6,7 @@ paths:
   models_dir: models
   predictions_dir: outputs/predictions
   tracking_dir: outputs/tracking
+  reviews_dir: outputs/reviews       # post-event reviews + evidence board (src/review.py)
 
 http:
   base_url: http://ufcstats.com
