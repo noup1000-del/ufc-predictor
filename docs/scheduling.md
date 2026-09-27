@@ -18,6 +18,14 @@ writes the review ("lessons learned") and retrains, then publishes the dashboard
 run it again later. One card never changes the model: the evidence board on the Results tab
 flags a pattern only after 30+ fights, and any model change still has to pass the backtest.
 
+**Your own observations** go in `event_notes.csv` (one line per note; open it in Excel or a text
+editor): `event_date` (e.g. 2026-09-26), `fighter` (as written on the card; leave empty for a
+note about the whole event), `short_notice` (`yes` if that fighter stepped in on short notice),
+`note` (free text; put it in "double quotes" if it contains a comma). Then run
+`scripts\update_dashboard.bat`. Notes appear on the Results tab as "Viewer notes", apart from the
+model's lessons; short-notice flags also feed the evidence board's late-change group. A name
+that doesn't match the card is still shown, marked "not found on the card", so you can fix it.
+
 **Card changed (replacement fighters, cancelled bouts)?** Run `scripts\update_dashboard.bat`
 (double-click it, or schedule it). It re-fetches every card from ufc.com, re-predicts them with
 the current model, commits `outputs/predictions/` only if something changed, and pushes to

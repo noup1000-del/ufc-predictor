@@ -30,6 +30,7 @@ ufc-predictor/
 ├── requirements.txt
 ├── ingest_overrides.csv    # committed manual fighter-ID fixes for name collisions (see ingest rules)
 ├── upcoming_aliases.csv    # committed, verified card-name -> fighter_id fixes for upcoming cards
+├── event_notes.csv         # committed viewer notes per event (event_date, fighter, short_notice, note)
 ├── run_pipeline.py         # entry point, runs stages in order
 ├── data/
 │   ├── raw/
@@ -221,6 +222,7 @@ Implementation notes (src/features.py):
 - The prediction row used for a fight is found by fighter IDs within the logged prediction file (`track.match_predictions`), never by names. Late changes come from the card JSON's `changes` (names looked up inside that card only).
 - **Evidence board** (`outputs/reviews/evidence.json`), over all reviewed fights: per segment (pick confidence, debutant, late change, how the fight ended, scheduled rounds, men/women) hit rate vs expected hit rate with a 95% Wilson interval. A segment is flagged (`overconfident` / `underconfident`) only with ≥ `MIN_EVIDENCE_FIGHTS` (30) fights **and** an interval that excludes the expectation; otherwise `collecting` or `consistent`.
 - **Model changes follow evidence, not single events:** never change features or parameters because of one card. Propose a change only for a flagged segment, and it must pass the walk-forward backtest and promotion gate (Stage 4) before it becomes `latest.pkl`. Weekly retraining on new fights is the only automatic update.
+- **Viewer notes** (`event_notes.csv`, config `review.notes_file`): human observations per event. `fighter` is matched by normalised name only against the two fighters of that event's bouts; no match (or several) keeps the note as an event-level note marked "not found on the card" (never guessed). Empty `fighter` = event note. `short_notice = yes` marks the bout `late_change` with `late_change_source = "viewer"` (a detected change stays `"detected"`), so it counts in the evidence board's late-change segment. Notes are shown as "Viewer notes (observations, not model output)", separate from the automatic lessons, and never feed the model directly. Notes for events not reviewed yet wait until they are. `run_predict_all` refreshes the reviews before building the dashboard, so editing the notes and running `update_dashboard.bat` publishes them.
 - The dashboard's first tab, "Results", shows the reviews (newest first, last 10 events) and the evidence board. `scripts/after_event.bat` = `--update --no-predict` (results, tracking, review, retrain) followed by `update_dashboard.bat` (which commits all of `outputs/`).
 
 ## run_pipeline.py
@@ -246,7 +248,7 @@ Scheduling (weekly Monday results/tracking job + Wednesday prediction job, Windo
 - Idempotency test: running the ingest's merge step twice doesn't add rows.
 - Ingest tests: outcome → winner mapping, round aggregation, renamed-event duplicates, same-name disambiguation, overrides.
 - Matching tests: normalisation, fuzzy thresholds, ambiguity handling.
-- Review tests: scorecard joins by IDs, debut/late-change flags, lessons, evidence-board thresholds, Results tab.
+- Review tests: scorecard joins by IDs, debut/late-change flags, DQ handling, viewer notes (matching, short notice, unmatched names), lessons, evidence-board thresholds, Results tab.
 - ufc.com schedule tests: events-list/event-page parsing, year from timestamp, card-file replacement and sync, aliases, per-host crawl delay.
 - Use saved fixtures in `tests/fixtures/` (excerpts of the Greco1899 CSVs, ESPN JSON, synthetic ufc.com HTML), not live requests.
 
