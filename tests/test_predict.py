@@ -263,13 +263,36 @@ def test_dashboard_contains_every_event_and_the_tab_switcher(tables, lgbm_artifa
         assert external not in html
 
 
+_BROWSER_CACHE: dict[str, str | None] = {}
+
+
 def _browser() -> str | None:
+    """First installed Chromium browser that can actually render a trivial page headless.
+    A browser that is installed but broken (e.g. Edge half-way through an update returns an
+    empty DOM) is skipped; our own page is never used for this probe, so a script error in the
+    dashboard still fails the tests instead of being mistaken for a broken browser."""
+    if "b" in _BROWSER_CACHE:
+        return _BROWSER_CACHE["b"]
     import shutil
+    import subprocess
+    import tempfile
     candidates = [shutil.which(n) for n in ("msedge", "chrome", "google-chrome", "chromium", "chromium-browser")]
     candidates += [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
                    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
                    r"C:\Program Files\Google\Chrome\Application\chrome.exe"]
-    return next((c for c in candidates if c and Path(c).exists()), None)
+    found = None
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:  # a stuck browser may hold files
+        probe = Path(tmp) / "probe.html"
+        probe.write_text("<!doctype html><title>p</title><p id=probe>ok</p>", encoding="utf-8")
+        for c in dict.fromkeys(c for c in candidates if c and Path(c).exists()):
+            try:
+                if 'id="probe"' in _rendered_dom(c, probe, "", Path(tmp) / f"profile{hash(c)}"):
+                    found = c
+                    break
+            except (OSError, subprocess.SubprocessError):
+                continue
+    _BROWSER_CACHE["b"] = found
+    return found
 
 
 def _rendered_dom(browser: str, page: Path, fragment: str, profile: Path, offline: bool = False) -> str:
