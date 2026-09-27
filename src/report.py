@@ -128,6 +128,10 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
 .scorecard .vs, .scorecard .p, .scorecard .method, .why .order { color: var(--muted); }
 .scorecard .method { display: block; font-size: 12px; }
 .why { margin-top: 4px; font-size: 12px; color: var(--muted); }
+.vnote { margin-top: 5px; font-size: 12px; color: var(--text); border-left: 2px solid var(--debut); padding-left: 8px; }
+.vnote span { display: block; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--debut); }
+.review h4 .order { text-transform: none; letter-spacing: 0; font-weight: 400; }
 .res { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: .05em; }
 .res.ok { background: #3fb950; color: #04260f; }
@@ -449,15 +453,18 @@ def _scorecard(bouts: list[dict]) -> str:
         if b.get("debut"):
             flags.append('<span class="flag debut">Debut</span>')
         if b.get("late_change"):
-            flags.append('<span class="flag late">Late change</span>')
+            flags.append('<span class="flag late" title="reported by a viewer">Short notice</span>'
+                         if b.get("late_change_source") == "viewer" else '<span class="flag late">Late change</span>')
         why = ""
         if b.get("correct") is False and b.get("pick_factors"):
             why = (f'<div class="why">Favoured {escape(b["pick"])} on: '
                    f'{escape("; ".join(b["pick_factors"][:3]))} '
                    f'<span class="order">({escape(b["fighter_1"])} vs {escape(b["fighter_2"])})</span></div>')
+        vnotes = "".join(f'<div class="vnote"><span>Viewer note</span>{escape(v["note"])}</div>'
+                         for v in b.get("viewer_notes") or [])
         rows.append(
             f'<tr><td class="num">{b.get("bout_order") or ""}</td>'
-            f'<td>{escape(b["fighter_1"])} <span class="vs">vs</span> {escape(b["fighter_2"])}{"".join(flags)}{why}</td>'
+            f'<td>{escape(b["fighter_1"])} <span class="vs">vs</span> {escape(b["fighter_2"])}{"".join(flags)}{why}{vnotes}</td>'
             f'<td><b>{escape(b["pick"])}</b> <span class="p">{_pct0(b.get("p_pick"))}</span></td>'
             f'<td>{escape(str(b.get("actual_winner") or ""))}<span class="method">{escape(_method_text(b))}</span></td>'
             f'<td>{mark}</td></tr>')
@@ -500,11 +507,18 @@ def _results_view(reviews: list[dict] | None, board: dict | None, first_upcoming
         head = (f'{s["correct"]} of {s["fights"]} correct ({_pct0(s["accuracy"])}) &middot; model expected '
                 f'{s["expected_correct"]:.1f}' if s.get("fights") else "Not scored")
         lessons = "".join(f"<li>{escape(x)}</li>" for x in r.get("lessons") or [])
+        ev_notes = "".join(
+            f"<li>{escape(v['note'])}"
+            + (f' <span class="order">(about {escape(v["fighter"])}, not found on the card)</span>' if v.get("unmatched") else "")
+            + "</li>" for v in r.get("viewer_notes") or [])
+        ev_notes = (f'<h4>Viewer notes <span class="order">(observations, not model output)</span></h4>'
+                    f'<ul class="lessons vnotes">{ev_notes}</ul>') if ev_notes else ""
         events_html.append(f"""
   <article class="review">
     <header><h3>{escape(r["event_name"])}</h3><span class="feed-date">{_short_date(r["event_date"])} {r["event_date"][:4]}</span>
       <span class="review-score">{head}</span></header>
-    <h4>Lessons</h4><ul class="lessons">{lessons}</ul>
+    <h4>Lessons <span class="order">(automatic, from the model's own numbers)</span></h4><ul class="lessons">{lessons}</ul>
+    {ev_notes}
     {_scorecard(r.get("bouts") or [])}
   </article>""")
     if not events_html:

@@ -90,7 +90,7 @@ def test_event_lessons_are_rule_based_and_cautious(tmp_path):
     assert "Upset: Di D beat Cy C (80% for Cy C) by decision" in text
     assert "Win rate 80% vs 40%" in text and "(values: Cy C vs Di D)" in text
     assert "near coin flips" in text and "Fi F over Ed E" in text
-    assert "Bouts with a late line-up change: 0 of 1 correct" in text
+    assert "Bouts with a late line-up change or short-notice fighter: 0 of 1 correct" in text
     assert "1 bout(s) ended in a draw or no contest" in text
     assert lessons[-1].startswith("One card is not evidence")
 
@@ -105,6 +105,55 @@ def test_disqualification_is_scored_but_called_out(tmp_path):
     assert "Cy C lost to Di D by disqualification (80% for Cy C)" in text and "rules decision" in text
     assert "Upset: Di D beat Cy C" not in text          # not presented as an upset
     assert text.startswith("1 of 3 picks correct")     # still counted
+
+
+def test_viewer_notes_attach_by_card_names_and_flag_short_notice(tmp_path):
+    from src.review import apply_notes, load_notes
+    preds, log, cards = write_event(tmp_path)
+    path = tmp_path / "event_notes.csv"
+    path.write_text("event_date,fighter,short_notice,note\n"
+                    "2030-01-05,Bo  B,yes,\"Strong round 3, #1 moment\"\n"      # spacing/case + '#' kept
+                    "2030-01-05,Gus G,,Close fight\n"
+                    "2030-01-05,Nobody Here,,Typo name\n"                        # not on the card
+                    "2030-01-05,,,Great card overall\n"                          # event-level
+                    "2031-01-01,Al A,yes,Not reviewed yet\n", encoding="utf-8")  # other event: waits
+    b = bout_records(log, FIGHTS, preds, cards)
+    b, event_notes = apply_notes(b, load_notes(path))
+    by = b.set_index("fight_id")
+    assert by.loc["f1", "late_change"] and by.loc["f1", "late_change_source"] == "viewer"
+    assert [v["note"] for v in by.loc["f1", "viewer_notes"]] == ["Bo B took the fight on short notice.",
+                                                                "Strong round 3, #1 moment"]
+    assert by.loc["f2", "late_change_source"] == "detected"                     # detected stays detected
+    assert [v["note"] for v in by.loc["f4", "viewer_notes"]] == ["Close fight"]
+    assert event_notes["2030-01-05"] == [{"note": "Typo name", "fighter": "Nobody Here", "unmatched": True},
+                                         {"note": "Great card overall"}]
+    board = evidence_board(b)
+    late = {g["value"]: g["fights"] for g in board["segments"] if g["segment"] == "Late line-up change"}
+    assert late == {"yes": 2, "no": 1}                                          # f1 (viewer) + f2 (detected)
+
+    from src.report import render_index
+    reviews, board = build_reviews(b, "2030-01-06T00:00:00+00:00", event_notes)
+    html = render_index([], {"model_version": "m"}, reviews=reviews, board=board)
+    assert 'title="reported by a viewer">Short notice</span>' in html
+    assert '<div class="vnote"><span>Viewer note</span>Strong round 3, #1 moment</div>' in html
+    assert "Viewer notes" in html and "(about Nobody Here, not found on the card)" in html
+    assert "(observations, not model output)" in html
+
+
+def test_notes_file_must_have_the_columns(tmp_path):
+    from src.review import load_notes
+    p = tmp_path / "n.csv"
+    p.write_text("date,fighter,note\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="missing column"):
+        load_notes(p)
+    assert load_notes(tmp_path / "absent.csv").empty
+
+
+def test_committed_notes_file_is_well_formed():
+    from pathlib import Path
+    from src.review import load_notes
+    notes = load_notes(Path(__file__).parents[1] / "event_notes.csv")
+    assert len(notes) and notes["event_date"].str.match(r"^\d{4}-\d{2}-\d{2}$").all()
 
 
 def test_evidence_board_needs_enough_fights_and_a_clear_gap():

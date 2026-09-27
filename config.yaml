@@ -40,6 +40,9 @@ upcoming:
   espn_cache_dir: data/raw/espn
   lookahead_days: 45
 
+review:
+  notes_file: event_notes.csv   # committed viewer notes per event (fighter, short_notice, note)
+
 analytics:
   # GoatCounter site code (https://<code>.goatcounter.com): cookie-free visit counts for the
   # published dashboard (index.html only). Empty = no analytics script at all.

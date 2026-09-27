@@ -137,6 +137,7 @@ def bout_records(log: pd.DataFrame, fights: pd.DataFrame, preds: pd.DataFrame, c
             "debutants": [n for n, d in ((r.fighter_1, p.get("fighter_1_debut")), (r.fighter_2, p.get("fighter_2_debut")))
                           if _int(d)],
             "late_change": bool(late_keys),
+            "late_change_source": "detected" if late_keys else None,
             "late_change_detected_at": min((late_when[k] for k in late_keys if late_when.get(k)), default=None),
             "pick_factors": drivers[pick_side], "other_factors": drivers[other_side],
             "model_version": r.model_version, "prediction_file": r.prediction_file,
@@ -202,7 +203,8 @@ def event_lessons(b: pd.DataFrame) -> list[str]:
         out.append(f"{len(flips)} miss(es) were near coin flips (under {COIN_FLIP:.0%}): "
                    + ", ".join(f"{r.actual_winner} over {r.pick}" for r in flips.itertuples(index=False))
                    + ". These say little about the model.")
-    for label, mask in (("involving a UFC debutant", s["debut"]), ("with a late line-up change", s["late_change"])):
+    for label, mask in (("involving a UFC debutant", s["debut"]),
+                        ("with a late line-up change or short-notice fighter", s["late_change"])):
         seg = s[mask]
         if len(seg):
             out.append(f"Bouts {label}: {int(seg['y'].sum())} of {len(seg)} correct "
@@ -264,7 +266,67 @@ def evidence_board(b: pd.DataFrame, min_fights: int = MIN_EVIDENCE_FIGHTS) -> di
     return board
 
 
-def build_reviews(b: pd.DataFrame, generated: str) -> tuple[list[dict], dict]:
+NOTE_COLUMNS = ["event_date", "fighter", "short_notice", "note"]
+_YES = {"yes", "y", "true", "1", "ja"}
+
+
+def load_notes(path: Path | None = None) -> pd.DataFrame:
+    """Viewer notes (`event_notes.csv`: event_date, fighter, short_notice, note). Empty fighter =
+    a note about the whole event; short_notice yes/no/blank. Missing file = no notes."""
+    if path is None:
+        path = resolve_path(load_config()["review"]["notes_file"])
+    if not path.exists():
+        return pd.DataFrame(columns=NOTE_COLUMNS)
+    notes = pd.read_csv(path, dtype=str, keep_default_na=False)
+    missing = [c for c in NOTE_COLUMNS if c not in notes.columns]
+    if missing:
+        raise ValueError(f"{path.name}: missing column(s) {missing}; expected {NOTE_COLUMNS}")
+    return notes[NOTE_COLUMNS].apply(lambda col: col.str.strip())
+
+
+def apply_notes(b: pd.DataFrame, notes: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, list[dict]]]:
+    """Attach viewer notes to bouts. A note's fighter is looked up (normalised name) only among
+    the fighters of that event's bouts; a name that matches no bout, or more than one, is kept
+    as an event-level note marked `unmatched`, never guessed. short_notice=yes marks the bout as
+    a late change with source "viewer" (it then counts in the evidence board's late-change
+    segment). Returns (bouts with `viewer_notes`, event-level notes per event_date)."""
+    b = b.copy()
+    b["viewer_notes"] = [[] for _ in range(len(b))]
+    event_level: dict[str, list[dict]] = {}
+    for n in notes.itertuples(index=False):
+        if not n.event_date or (not n.note and n.short_notice.lower() not in _YES):
+            continue
+        rows = b.index[b["event_date"] == n.event_date]
+        if len(rows) == 0:
+            continue   # event not reviewed (yet); the note waits until it is
+        if not n.fighter:
+            if n.note:
+                event_level.setdefault(n.event_date, []).append({"note": n.note})
+            continue
+        key = normalize_name(n.fighter)
+        hits = [i for i in rows if key in (normalize_name(b.at[i, "fighter_1"]), normalize_name(b.at[i, "fighter_2"]))]
+        if len(hits) != 1:
+            logger.warning("event_notes.csv: %r is not (uniquely) on the %s card; shown as an event note",
+                           n.fighter, n.event_date)
+            event_level.setdefault(n.event_date, []).append(
+                {"note": n.note or "reported short notice", "fighter": n.fighter, "unmatched": True})
+            continue
+        i = hits[0]
+        name = b.at[i, "fighter_1"] if normalize_name(b.at[i, "fighter_1"]) == key else b.at[i, "fighter_2"]
+        if n.short_notice.lower() in _YES:
+            b.at[i, "late_change"] = True
+            if pd.isna(b.at[i, "late_change_source"]) or not b.at[i, "late_change_source"]:
+                b.at[i, "late_change_source"] = "viewer"
+            b.at[i, "viewer_notes"].append({"fighter": name, "note": f"{name} took the fight on short notice."})
+        if n.note:
+            b.at[i, "viewer_notes"].append({"fighter": name, "note": n.note})
+    return b, event_level
+
+
+def build_reviews(b: pd.DataFrame, generated: str,
+                  event_notes: dict[str, list[dict]] | None = None) -> tuple[list[dict], dict]:
+    if "viewer_notes" not in b:
+        b = b.assign(viewer_notes=[[] for _ in range(len(b))])
     reviews = []
     for (event_date, event_name), g in b.groupby(["event_date", "event_name"], sort=True):
         g = g.sort_values(["bout_order", "fight_id"], na_position="last")
@@ -272,6 +334,7 @@ def build_reviews(b: pd.DataFrame, generated: str) -> tuple[list[dict], dict]:
             "event_date": event_date, "event_name": event_name, "slug": slugify(event_name),
             "generated_at": generated, "summary": _summary(_scored(g)),
             "lessons": event_lessons(g),
+            "viewer_notes": (event_notes or {}).get(event_date, []),
             "bouts": json.loads(g.drop(columns=["event_date", "event_name"]).to_json(orient="records")),
         })
     board = evidence_board(b)
@@ -315,7 +378,8 @@ def run_review(generated: str | None = None) -> dict:
                                                 "winner_id": "string", "result": str})
     preds = load_predictions(resolve_path(cfg["paths"]["predictions_dir"]))
     b = bout_records(log, fights, preds, resolve_path(cfg["upcoming"]["cards_dir"]))
-    reviews, board = build_reviews(b, generated)
+    b, event_notes = apply_notes(b, load_notes(resolve_path(cfg["review"]["notes_file"])))
+    reviews, board = build_reviews(b, generated, event_notes)
 
     out_dir = resolve_path(cfg["paths"]["reviews_dir"])
     for r in reviews:

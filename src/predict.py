@@ -32,7 +32,7 @@ from src.features import build_history, matchup_features, swap_orientation, symm
 from src.http import FetchError
 from src.matching import FighterMatcher
 from src.report import render_html, render_index
-from src.review import load_reviews
+from src.review import load_reviews, run_review
 from src.train import load_model
 from src.upcoming import (Card, UpcomingCardError, get_upcoming_card, load_aliases, load_scheduled_cards, match_card,
                           slugify, update_schedule)
@@ -301,6 +301,10 @@ def run_predict_all(fetch: bool = True) -> list[dict]:
         entries.append(entry)
 
     index = out_dir / "index.html"
+    try:   # refresh reviews so edited viewer notes are published; the saved ones are the fallback
+        run_review()
+    except Exception as e:  # noqa: BLE001 - a review problem must not block the predictions page
+        logger.error("Refreshing reviews failed (%s); publishing the saved reviews", e)
     reviews, board = load_reviews()
     _write_atomic(index, render_index(entries, meta, reviews=reviews, board=board,
                                       goatcounter_code=(cfg.get("analytics") or {}).get("goatcounter_code")))
