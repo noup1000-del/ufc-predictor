@@ -95,6 +95,18 @@ def test_event_lessons_are_rule_based_and_cautious(tmp_path):
     assert lessons[-1].startswith("One card is not evidence")
 
 
+def test_disqualification_is_scored_but_called_out(tmp_path):
+    preds, log, cards = write_event(tmp_path)
+    fights = FIGHTS.copy()
+    fights.loc[fights.fight_id == "f2", ["method", "method_group"]] = ["DQ", "dq"]
+    b = bout_records(log, fights, preds, cards).set_index("fight_id")
+    assert b.loc["f2", "correct"] is False and b.loc["f2", "surprise"] == "disqualification"
+    text = "\n".join(event_lessons(b.reset_index()))
+    assert "Cy C lost to Di D by disqualification (80% for Cy C)" in text and "rules decision" in text
+    assert "Upset: Di D beat Cy C" not in text          # not presented as an upset
+    assert text.startswith("1 of 3 picks correct")     # still counted
+
+
 def test_evidence_board_needs_enough_fights_and_a_clear_gap():
     rng = np.random.default_rng(0)
     n = 200

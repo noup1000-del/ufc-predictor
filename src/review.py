@@ -131,7 +131,8 @@ def bout_records(log: pd.DataFrame, fights: pd.DataFrame, preds: pd.DataFrame, c
             "method_group": _str(fight.get("method_group")), "method": _str(fight.get("method")),
             "end_round": _int(fight.get("end_round")), "end_time_sec": _int(fight.get("end_time_sec")),
             "scheduled_rounds": _int(fight.get("scheduled_rounds")),
-            "surprise": surprise_level(p_pick) if correct is False else None,
+            "surprise": (None if correct is not False else "disqualification"
+                         if _str(fight.get("method_group")) == "dq" else surprise_level(p_pick)),
             "debut": bool(_int(p.get("fighter_1_debut")) or _int(p.get("fighter_2_debut"))),
             "debutants": [n for n, d in ((r.fighter_1, p.get("fighter_1_debut")), (r.fighter_2, p.get("fighter_2_debut")))
                           if _int(d)],
@@ -183,6 +184,13 @@ def event_lessons(b: pd.DataFrame) -> list[str]:
                f"the model expected about {m['expected_correct']:.1f} correct, so this card went {verdict} "
                f"expected (normal night-to-night spread is about ±{sd:.1f}).")
     misses = s[s["y"] == 0].sort_values("p_pick", ascending=False)
+    # A disqualification is an official loss (so it stays scored), but it is a rules decision,
+    # not a verdict on the matchup the model priced: call it out and keep it out of the upset lists.
+    dq = misses[misses["method_group"] == "dq"]
+    for r in dq.itertuples(index=False):
+        out.append(f"{r.pick} lost to {r.actual_winner} by disqualification ({r.p_pick:.0%} for {r.pick}). "
+                   "It counts as a miss, but a DQ is a rules decision and says little about the prediction.")
+    misses = misses[misses["method_group"] != "dq"]
     for r in misses[misses["p_pick"] >= CLEAR_FAVOURITE].itertuples(index=False):
         how = _how(r)
         why = ("; ".join(r.pick_factors[:3]) + f" (values: {r.fighter_1} vs {r.fighter_2})"
