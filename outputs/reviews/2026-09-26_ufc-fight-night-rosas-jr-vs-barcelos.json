@@ -1,0 +1,485 @@
+{
+  "event_date": "2026-09-26",
+  "event_name": "UFC Fight Night: Rosas Jr. vs Barcelos",
+  "slug": "ufc-fight-night-rosas-jr-vs-barcelos",
+  "generated_at": "2026-09-29T07:42:28+00:00",
+  "summary": {
+    "fights": 12,
+    "correct": 8,
+    "accuracy": 0.6666666666666666,
+    "expected_correct": 7.118900000000001,
+    "expected_accuracy": 0.5932416666666668,
+    "brier": 0.2109614141666667,
+    "log_loss": 0.6127597091975077
+  },
+  "lessons": [
+    "8 of 12 picks correct (67%). From its own probabilities the model expected about 7.1 correct, so this card went in line with expected (normal night-to-night spread is about ±1.7).",
+    "Mahammadali Osmanli lost to Ilimbek Akylbek by disqualification (52% for Mahammadali Osmanli). It counts as a miss, but a DQ is a rules decision and says little about the prediction.",
+    "1 miss(es) were near coin flips (under 55%): Christian Edwards over Rodolfo Bellato. These say little about the model.",
+    "Bouts involving a UFC debutant: 2 of 3 correct (model expected 1.6).",
+    "Bouts with a late line-up change or short-notice fighter: 1 of 2 correct (model expected 1.1).",
+    "Finishes: 6 of 8 picked correctly; decisions: 2 of 3.",
+    "One card is not evidence: patterns are judged on the evidence board across all tracked fights."
+  ],
+  "viewer_notes": [],
+  "bouts": [
+    {
+      "fight_id": "0e55d8a3d7a73912",
+      "bout_order": 1,
+      "weight_class": "Bantamweight",
+      "fighter_1": "Raul Rosas Jr.",
+      "fighter_2": "Raoni Barcelos",
+      "pick": "Raul Rosas Jr.",
+      "p_pick": 0.6478,
+      "actual_winner": "Raul Rosas Jr.",
+      "correct": true,
+      "result": "win",
+      "method_group": "ko_tko",
+      "method": "KO/TKO",
+      "end_round": 5,
+      "end_time_sec": 98,
+      "scheduled_rounds": 5,
+      "surprise": null,
+      "debut": false,
+      "debutants": [],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Age 22.0 vs 39.4",
+        "Sig. strikes absorbed /15m 20.1 vs 63.7",
+        "Takedowns /15m 6.8 vs 2.5"
+      ],
+      "other_factors": [
+        "Sig. strikes landed /15m (last 3) 23.0 vs 46.7",
+        "Sig. strikes landed /15m 20.1 vs 69.8",
+        "Takedown defense 33% vs 88%"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": [
+        {
+          "fighter": "Raul Rosas Jr.",
+          "note": "Beat Raoni Barcelos; both delivered a great fight."
+        }
+      ]
+    },
+    {
+      "fight_id": "5e5d01e437bced71",
+      "bout_order": 2,
+      "weight_class": "Women's Bantamweight",
+      "fighter_1": "Norma Dumont",
+      "fighter_2": "Ailin Perez",
+      "pick": "Ailin Perez",
+      "p_pick": 0.6169,
+      "actual_winner": "Ailin Perez",
+      "correct": true,
+      "result": "win",
+      "method_group": "decision",
+      "method": "Decision - Unanimous",
+      "end_round": 3,
+      "end_time_sec": 300,
+      "scheduled_rounds": 3,
+      "surprise": null,
+      "debut": false,
+      "debutants": [],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Age 36.0 vs 32.0",
+        "Takedowns /15m 1.4 vs 4.9",
+        "Streak -1 vs +6"
+      ],
+      "other_factors": [
+        "Striking defense 64% vs 57%",
+        "UFC wins 9 vs 6",
+        "Sig. strikes landed /15m (last 3) 90.7 vs 42.5"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": [
+        {
+          "fighter": "Ailin Perez",
+          "note": "Won, but it was closer to 50/50 than the model's 62%."
+        }
+      ]
+    },
+    {
+      "fight_id": "7c954175878dd610",
+      "bout_order": 3,
+      "weight_class": "Light Heavyweight",
+      "fighter_1": "Luis Hernandez",
+      "fighter_2": "Sedriques Dumas",
+      "pick": "Luis Hernandez",
+      "p_pick": 0.5363,
+      "actual_winner": "Luis Hernandez",
+      "correct": true,
+      "result": "win",
+      "method_group": "submission",
+      "method": "Submission",
+      "end_round": 1,
+      "end_time_sec": 57,
+      "scheduled_rounds": 3,
+      "surprise": null,
+      "debut": true,
+      "debutants": [
+        "Luis Hernandez"
+      ],
+      "late_change": true,
+      "late_change_source": "detected",
+      "late_change_detected_at": "2026-09-26T08:05:02+00:00",
+      "pick_factors": [
+        "Win rate 50% vs 36%",
+        "Age 30.1 vs 31.1",
+        "Takedown defense (last 3) n/a vs 0%"
+      ],
+      "other_factors": [
+        "Stance matchup n/a vs Orthodox",
+        "Reach n/a vs 79\"",
+        "UFC wins 0 vs 3"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": []
+    },
+    {
+      "fight_id": "3a70ed81e5611d24",
+      "bout_order": 4,
+      "weight_class": "Bantamweight",
+      "fighter_1": "Mahammadali Osmanli",
+      "fighter_2": "Ilimbek Akylbek",
+      "pick": "Mahammadali Osmanli",
+      "p_pick": 0.5164,
+      "actual_winner": "Ilimbek Akylbek",
+      "correct": false,
+      "result": "win",
+      "method_group": "dq",
+      "method": "DQ",
+      "end_round": 1,
+      "end_time_sec": 139,
+      "scheduled_rounds": 4,
+      "surprise": "disqualification",
+      "debut": true,
+      "debutants": [
+        "Mahammadali Osmanli",
+        "Ilimbek Akylbek"
+      ],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Age 22.1 vs 23.1"
+      ],
+      "other_factors": [],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": [
+        {
+          "fighter": "Mahammadali Osmanli",
+          "note": "Disqualified for an illegal knee."
+        }
+      ]
+    },
+    {
+      "fight_id": "7bff1b7a45666e98",
+      "bout_order": 5,
+      "weight_class": "Women's Strawweight",
+      "fighter_1": "Melissa Amaya",
+      "fighter_2": "Tina Black",
+      "pick": "Tina Black",
+      "p_pick": 0.5632,
+      "actual_winner": "Tina Black",
+      "correct": true,
+      "result": "win",
+      "method_group": "ko_tko",
+      "method": "KO/TKO",
+      "end_round": 2,
+      "end_time_sec": 199,
+      "scheduled_rounds": 4,
+      "surprise": null,
+      "debut": true,
+      "debutants": [
+        "Melissa Amaya",
+        "Tina Black"
+      ],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Stance matchup n/a vs Orthodox",
+        "Age 31.8 vs 30.4"
+      ],
+      "other_factors": [],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": []
+    },
+    {
+      "fight_id": "29423f522e76f12e",
+      "bout_order": 6,
+      "weight_class": "Bantamweight",
+      "fighter_1": "Brady Hiestand",
+      "fighter_2": "Rinya Nakamura",
+      "pick": "Rinya Nakamura",
+      "p_pick": 0.6014,
+      "actual_winner": "Brady Hiestand",
+      "correct": false,
+      "result": "win",
+      "method_group": "submission",
+      "method": "Submission",
+      "end_round": 2,
+      "end_time_sec": 247,
+      "scheduled_rounds": 3,
+      "surprise": "lean",
+      "debut": false,
+      "debutants": [],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Sig. strikes absorbed /15m 56.3 vs 22.9",
+        "Takedown defense 43% vs 100%",
+        "Striking defense 51% vs 64%"
+      ],
+      "other_factors": [
+        "Age 27.4 vs 31.5",
+        "Takedowns /15m 4.8 vs 2.3",
+        "Takedowns /15m (last 3) 4.4 vs 1.5"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": [
+        {
+          "fighter": "Brady Hiestand",
+          "note": "Mixed it up better, with wrestling and ground game."
+        }
+      ]
+    },
+    {
+      "fight_id": "5a5395d939bb3ff3",
+      "bout_order": 7,
+      "weight_class": "Middleweight",
+      "fighter_1": "Rodolfo Vieira",
+      "fighter_2": "Robert Bryczek",
+      "pick": "Rodolfo Vieira",
+      "p_pick": 0.6045,
+      "actual_winner": "Rodolfo Vieira",
+      "correct": true,
+      "result": "win",
+      "method_group": "decision",
+      "method": "Decision - Unanimous",
+      "end_round": 3,
+      "end_time_sec": 300,
+      "scheduled_rounds": 3,
+      "surprise": null,
+      "debut": false,
+      "debutants": [],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Win rate 54% vs 40%",
+        "Takedown accuracy (last 3) 14% vs 100%",
+        "Takedowns /15m 2.9 vs 0.4"
+      ],
+      "other_factors": [
+        "Age 37.0 vs 36.2",
+        "Striking defense 49% vs 55%",
+        "Takedown defense (last 3) 20% vs 71%"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": []
+    },
+    {
+      "fight_id": "30b73c201daa089c",
+      "bout_order": 8,
+      "weight_class": "Light Heavyweight",
+      "fighter_1": "Rodolfo Bellato",
+      "fighter_2": "Christian Edwards",
+      "pick": "Rodolfo Bellato",
+      "p_pick": 0.5176,
+      "actual_winner": "Christian Edwards",
+      "correct": false,
+      "result": "win",
+      "method_group": "ko_tko",
+      "method": "KO/TKO",
+      "end_round": 3,
+      "end_time_sec": 107,
+      "scheduled_rounds": 3,
+      "surprise": "coin flip",
+      "debut": false,
+      "debutants": [],
+      "late_change": true,
+      "late_change_source": "viewer",
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Stance matchup Orthodox vs n/a",
+        "Win rate 43% vs 33%",
+        "Sig. strikes landed /15m 80.5 vs 36.0"
+      ],
+      "other_factors": [
+        "Age 30.6 vs 27.9",
+        "Sig. strikes absorbed /15m 93.6 vs 36.0",
+        "Sig. strikes absorbed /15m (last 3) 75.4 vs 36.0"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": [
+        {
+          "fighter": "Christian Edwards",
+          "note": "Christian Edwards took the fight on short notice."
+        },
+        {
+          "fighter": "Christian Edwards",
+          "note": "Mixed it up really well and looked strong; decisive forward offence in round 3 won it."
+        }
+      ]
+    },
+    {
+      "fight_id": "15d95453729f4c2c",
+      "bout_order": 9,
+      "weight_class": "Lightweight",
+      "fighter_1": "Elves Brener",
+      "fighter_2": "Josiah Harrell",
+      "pick": "Elves Brener",
+      "p_pick": 0.594,
+      "actual_winner": "Elves Brener",
+      "correct": true,
+      "result": "win",
+      "method_group": "ko_tko",
+      "method": "KO/TKO",
+      "end_round": 1,
+      "end_time_sec": 254,
+      "scheduled_rounds": 3,
+      "surprise": null,
+      "debut": false,
+      "debutants": [],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Win rate 50% vs 33%",
+        "Striking defense 51% vs 30%",
+        "Takedown defense 76% vs 0%"
+      ],
+      "other_factors": [
+        "Age 29.0 vs 27.9",
+        "Stance matchup Orthodox vs Southpaw",
+        "Layoff (days) 420 vs 217"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": []
+    },
+    {
+      "fight_id": "9037b26e92e25357",
+      "bout_order": 10,
+      "weight_class": "Bantamweight",
+      "fighter_1": "Montel Jackson",
+      "fighter_2": "Ricky Simon",
+      "pick": "Montel Jackson",
+      "p_pick": 0.5893,
+      "actual_winner": "Montel Jackson",
+      "correct": true,
+      "result": "win",
+      "method_group": "ko_tko",
+      "method": "KO/TKO",
+      "end_round": 2,
+      "end_time_sec": 159,
+      "scheduled_rounds": 3,
+      "surprise": null,
+      "debut": false,
+      "debutants": [],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Sig. strikes absorbed /15m 20.6 vs 60.1",
+        "Win rate 67% vs 58%",
+        "Reach 75\" vs 69\""
+      ],
+      "other_factors": [
+        "Age 34.4 vs 34.1",
+        "Sig. strikes landed /15m (last 3) 31.7 vs 48.3",
+        "Takedowns /15m 2.6 vs 3.8"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": []
+    },
+    {
+      "fight_id": "577011f3bbcf7f91",
+      "bout_order": 11,
+      "weight_class": "Bantamweight",
+      "fighter_1": "John Castaneda",
+      "fighter_2": "Alatengheili",
+      "pick": "John Castaneda",
+      "p_pick": 0.6206,
+      "actual_winner": "Alatengheili",
+      "correct": false,
+      "result": "win",
+      "method_group": "decision",
+      "method": "Decision - Split",
+      "end_round": 3,
+      "end_time_sec": 300,
+      "scheduled_rounds": 3,
+      "surprise": "lean",
+      "debut": false,
+      "debutants": [],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Layoff (days) 161 vs 518",
+        "Striking accuracy 52% vs 33%",
+        "Sig. strikes landed /15m (last 3) 78.7 vs 39.0"
+      ],
+      "other_factors": [
+        "Win rate 45% vs 55%",
+        "Takedowns /15m 1.4 vs 1.7",
+        "Striking defense 53% vs 57%"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": []
+    },
+    {
+      "fight_id": "f34e58d365bb37b1",
+      "bout_order": 12,
+      "weight_class": "Women's Strawweight",
+      "fighter_1": "Vanessa Demopoulos",
+      "fighter_2": "Yazmin Jauregui",
+      "pick": "Yazmin Jauregui",
+      "p_pick": 0.7109,
+      "actual_winner": "Yazmin Jauregui",
+      "correct": true,
+      "result": "win",
+      "method_group": "ko_tko",
+      "method": "KO/TKO",
+      "end_round": 1,
+      "end_time_sec": 62,
+      "scheduled_rounds": 3,
+      "surprise": null,
+      "debut": false,
+      "debutants": [],
+      "late_change": false,
+      "late_change_source": null,
+      "late_change_detected_at": null,
+      "pick_factors": [
+        "Age 38.0 vs 27.6",
+        "Win rate 50% vs 57%",
+        "Striking defense 41% vs 55%"
+      ],
+      "other_factors": [
+        "Layoff (days) 469 vs 742",
+        "Sig. strikes absorbed /15m (last 3) 66.3 vs 98.8",
+        "Takedowns /15m 0.4 vs 0.0"
+      ],
+      "model_version": "model_2026-09-23",
+      "prediction_file": "2026-09-26_ufc-fight-night-rosas-jr-vs-barcelos.csv",
+      "viewer_notes": []
+    }
+  ]
+}
